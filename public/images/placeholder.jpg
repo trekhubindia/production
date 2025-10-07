@@ -1,0 +1,6 @@
+# This is a placeholder for the missing image file
+# In production, this should be replaced with an actual placeholder image
+# For now, we'll create a simple SVG placeholder
+
+# Create a simple 1x1 pixel placeholder
+echo "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" | base64 -d

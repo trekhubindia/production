@@ -1,0 +1,606 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Fix: Prevent input background from turning white on paste/focus/active, including specific types and not(:placeholder-shown) */
+input,
+input:focus,
+input:active,
+input:focus-visible,
+input:not(:placeholder-shown),
+input[type="email"],
+input[type="email"]:focus,
+input[type="email"]:active,
+input[type="email"]:focus-visible,
+input[type="email"]:not(:placeholder-shown),
+input[type="text"],
+input[type="text"]:focus,
+input[type="text"]:active,
+input[type="text"]:focus-visible,
+input[type="text"]:not(:placeholder-shown),
+input[type="password"],
+input[type="password"]:focus,
+input[type="password"]:active,
+input[type="password"]:focus-visible,
+input[type="password"]:not(:placeholder-shown) {
+  background-color: var(--input) !important;
+  color: var(--foreground) !important;
+}
+
+/* Fix Chrome/Edge autofill and paste white background */
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+input:-webkit-autofill:hover {
+  -webkit-box-shadow: 0 0 0 1000px var(--input) inset !important;
+  box-shadow: 0 0 0 1000px var(--input) inset !important;
+  -webkit-text-fill-color: var(--foreground) !important;
+  color: var(--foreground) !important;
+  caret-color: var(--foreground) !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* Override for booking form inputs to ensure proper styling */
+.booking-form-input {
+  background-color: white !important;
+  color: #1f2937 !important;
+}
+
+.dark .booking-form-input {
+  background-color: #1f2937 !important;
+  color: white !important;
+}
+
+.booking-form-input:disabled {
+  background-color: #f3f4f6 !important;
+  color: #6b7280 !important;
+}
+
+.dark .booking-form-input:disabled {
+  background-color: #374151 !important;
+  color: #9ca3af !important;
+}
+
+/* Pill should never animate border-radius or any property */
+.pill-no-anim {
+  transition: none !important;
+}
+
+/* Pill animates all except border-radius */
+.pill-no-radius-anim {
+  transition-property: width, max-width, height, top, left, right, background, box-shadow;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4,0,0.2,1);
+}
+
+/* Premium Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+/* Global navbar spacing fix */
+body {
+  padding-top: 0;
+}
+
+/* Ensure content doesn't go under fixed navbar */
+main, .main-content {
+  padding-top: 0; /* Remove padding for hero section */
+}
+
+/* Add padding only for sections after hero */
+main > *:not(:first-child) {
+  padding-top: 6rem; /* 96px - adjust based on navbar height */
+}
+
+/* For pages that need explicit navbar spacing */
+.navbar-spacing {
+  padding-top: 6rem;
+}
+
+/* Remove navbar spacing for payment pages */
+.payment-page {
+  padding-top: 0 !important;
+}
+
+/* Payment page specific styles */
+.payment-page .navbar-spacing {
+  padding-top: 0 !important;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Removed Lenis helper styles */
+
+@keyframes slide-in-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.8s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.8s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.6s ease-out forwards;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200px 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+.animation-delay-600 {
+  animation-delay: 0.6s;
+}
+
+.animation-delay-800 {
+  animation-delay: 0.8s;
+}
+
+.animation-delay-1000 {
+  animation-delay: 1s;
+}
+
+.animation-delay-1200 {
+  animation-delay: 1.2s;
+}
+
+/* Premium Glass Effect */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Premium Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #22c55e, #16a34a, #15803d);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Premium Hover Effects */
+.premium-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-hover:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Premium Card Glow */
+.card-glow {
+  position: relative;
+}
+
+.card-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent, rgba(34, 197, 94, 0.1), transparent);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card-glow:hover::before {
+  opacity: 1;
+}
+
+/* Enhanced Image Quality */
+.hero-slider img,
+.trek-card img,
+.featured-trek-card img,
+.schedule-card img,
+.blog-highlights img,
+.article img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Subtle Image Enhancement */
+.image-enhancement {
+  filter: brightness(1.05) contrast(1.1) saturate(1.05);
+}
+
+.image-enhancement:hover {
+  filter: brightness(1.1) contrast(1.15) saturate(1.1);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: #121212;
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply text-foreground;
+  }
+  
+  /* Smooth theme transitions - optimized for performance */
+  html {
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  
+  /* Only apply transitions to essential elements for better performance */
+  html * {
+    transition: color 0.15s ease;
+  }
+  
+  /* Exclude certain elements from theme transitions for performance */
+  html *:not(transition-none) {
+    transition: color 0.15s ease;
+  }
+  
+  /* Disable transitions on performance-critical elements */
+  .no-transition,
+  .no-transition * {
+    transition: none !important;
+  }
+  
+  /* Theme toggle button specific animations - optimized */
+  .theme-toggle-icon {
+    transition: transform 0.15s ease;
+  }
+  
+  .theme-toggle-button {
+    transition: all 0.15s ease;
+  }
+  
+  .theme-toggle-button:hover {
+    transform: scale(1.05);
+  }
+  
+  .theme-toggle-button:active {
+    transform: scale(0.98);
+  }
+  
+  /* Hide scrollbars while keeping scroll functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+  }
+  
+  /* Mobile-specific optimizations */
+  @media (max-width: 640px) {
+    /* Improve touch targets on mobile */
+    button, a[role="button"], .custom-button {
+      min-height: 48px;
+      min-width: 48px;
+    }
+    
+    /* Optimize text readability on mobile */
+    body {
+      font-size: 16px; /* Prevent zoom on iOS */
+      -webkit-text-size-adjust: 100%;
+    }
+    
+    /* Better spacing for mobile cards */
+    .schedule-card, .featured-trek-card, .trek-card {
+      margin-bottom: 1rem;
+    }
+    
+    /* Optimize hero content for mobile */
+    .hero-slider {
+      min-height: 100vh;
+      min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
+    }
+    
+    /* Improve mobile form inputs */
+    input, textarea, select {
+      font-size: 16px; /* Prevent zoom on iOS */
+      padding: 12px 16px;
+      min-height: 48px;
+    }
+    
+    /* Mobile-friendly navigation */
+    .nav-menu {
+      touch-action: manipulation;
+    }
+    
+    /* Optimize image loading on mobile */
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+    
+    /* Mobile trek cards optimization */
+    .schedule-card {
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Mobile filter improvements */
+    .filter-dropdown {
+      font-size: 16px;
+      padding: 14px 16px;
+    }
+    
+    /* Mobile button improvements */
+    .mobile-cta {
+      padding: 12px 16px;
+      font-size: 16px;
+      border-radius: 12px;
+    }
+  }
+  
+  /* Tablet optimizations */
+  @media (min-width: 641px) and (max-width: 1024px) {
+    /* Adjust grid gaps for tablets */
+    .trek-schedule {
+      gap: 2rem;
+    }
+  }
+  
+  /* Animation keyframes for improved treks page */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slide-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  /* Animation classes */
+  .animate-fade-in-up {
+    animation: fade-in-up 0.6s ease-out forwards;
+    opacity: 0;
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-out forwards;
+  }
+  
+  .animate-slide-in-right {
+    animation: slide-in-right 0.5s ease-out forwards;
+    opacity: 0;
+  }
+  
+  /* Improved hover effects for trek cards */
+  .schedule-card:hover {
+    transform: translateY(-8px) scale(1.02);
+  }
+  
+  /* Enhanced glassmorphism effects */
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .glass-effect-dark {
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}

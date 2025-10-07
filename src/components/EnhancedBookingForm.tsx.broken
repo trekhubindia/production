@@ -1,0 +1,1021 @@
+"use client";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/context/AuthContext';
+import { 
+  CompleteBookingForm, 
+  ParticipantForm,
+  TrekPriceBreakdown,
+  HealthFitnessForm,
+  TravelPreferencesForm,
+  LegalConsentForm,
+  OptionalAddonsForm,
+} from '@/lib/types/enhanced-booking-types';
+
+interface EnhancedBookingFormProps {
+  trekSlug: string;
+  trekName: string;
+  trekPrice: number;
+  trekMinDob?: string; // ISO date string for minimum date of birth
+  slotId?: string;
+  bookingDate?: string;
+}
+
+interface Slot {
+  id: string;
+  date?: string;
+  status?: string;
+  capacity?: number;
+  booked?: number;
+}
+
+type FormStep = 'date' | 'participants' | 'health' | 'travel' | 'review';
+
+export default function EnhancedBookingForm({ 
+  trekSlug, 
+  trekName, 
+  trekPrice, 
+  trekMinDob = new Date(Date.now() - 12 * 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Default to 12 years ago
+  bookingDate 
+}: EnhancedBookingFormProps) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState<FormStep>('date');
+  const [slots, setSlots] = useState<Slot[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [totalAmount, setTotalAmount] = useState<number>(trekPrice);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [priceBreakdown, setPriceBreakdown] = useState<TrekPriceBreakdown | null>(null);
+
+  // Form data
+  const [formData, setFormData] = useState<CompleteBookingForm>({
+    trek_slug: trekSlug,
+    booking_date: bookingDate || '',
+    participants: 1,
+    base_amount: trekPrice,
+    
+    // Customer information (primary contact)
+    customer_name: user?.name || '',
+    customer_email: user?.email || '',
+    customer_phone: user?.phone || '',
+    customer_dob: '',
+    customer_gender: undefined,
+    customer_nationality: '',
+    emergency_contact_name: '',
+    emergency_contact_phone: '',
+    
+    // Health and fitness
+    health_fitness: {
+      medical_conditions: '',
+      recent_illnesses: '',
+      current_medications: '',
+      trekking_experience: undefined,
+      fitness_consent: false,
+    },
+    
+    // Travel preferences
+    travel_preferences: {
+      needs_transportation: false,
+      pickup_point: '',
+      accommodation_preferences: '',
+    },
+    
+    // Legal consent
+    legal_consent: {
+      terms_accepted: false,
+      liability_waiver_accepted: false,
+      covid_declaration_accepted: false,
+    },
+    
+    // Optional add-ons
+    optional_addons: {
+      trek_gear_rental: false,
+      porter_services: false,
+      addon_details: {},
+    },
+    
+    // Participant details
+    participants_details: [{
+      full_name: '',
+      date_of_birth: '',
+      gender: undefined,
+      contact_number: '',
+      email_address: '',
+      residential_address: '',
+      id_proof_type: undefined,
+      id_proof_number: '',
+      id_proof_file_url: '',
+    }],
+    
+    // Special requirements
+    special_requirements: '',
+  });
+
+  // Fetch slots and user profile when component mounts
+  useEffect(() => {
+    const fetchSlots = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/slots?trek_slug=${trekSlug}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSlots(data.allSlots || data.slots || []);
+        }
+      } catch (error) {
+        console.error('Error fetching slots:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchUserProfile = async () => {
+      if (!user) {
+        setProfileLoading(false);
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/profile');
+        if (response.ok) {
+          const data = await response.json();
+          setUserProfile(data.profile);
+          
+          // Update form data with profile information
+          setFormData(prev => ({
+            ...prev,
+            // Primary contact info (from auth_user and user_profiles)
+            customer_name: data.profile?.full_name || data.profile?.name || user.name || '',
+            customer_email: data.profile?.email || user.email || '', // From auth_user table
+            customer_phone: data.profile?.phone || user.phone || '',
+            customer_dob: data.profile?.date_of_birth || '',
+            customer_gender: data.profile?.gender || undefined,
+            customer_nationality: data.profile?.nationality || '',
+            
+            // Primary participant details
+            participants_details: [{
+              ...prev.participants_details[0],
+              full_name: data.profile?.full_name || data.profile?.name || user.name || '',
+              date_of_birth: data.profile?.date_of_birth || '',
+              gender: data.profile?.gender || undefined,
+              nationality: data.profile?.nationality || '',
+              contact_number: data.profile?.phone || user.phone || '',
+              email_address: data.profile?.email || user.email || '', // From auth_user table
+              residential_address: data.profile?.location || '', // Using location as address
+            }]
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    fetchSlots();
+    fetchUserProfile();
+  }, [trekSlug, user]);
+
+  // Fetch price breakdown
+  useEffect(() => {
+    if (!trekSlug) return;
+    fetch(`/api/treks/${trekSlug}/price-breakdown`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.priceBreakdown) {
+          setPriceBreakdown(data.priceBreakdown);
+          setTotalAmount(data.priceBreakdown.total_price_with_gst);
+        }
+      })
+      .catch(() => {
+        // Fallback to basic price
+        setTotalAmount(trekPrice);
+      });
+  }, [trekSlug, trekPrice]);
+
+  // Update participants details when participants count changes
+  useEffect(() => {
+    const currentParticipants = formData.participants_details.length;
+    const newParticipants = formData.participants;
+    
+    if (newParticipants > currentParticipants) {
+      // Add new participants
+      const newParticipantsArray = [...formData.participants_details];
+      for (let i = currentParticipants; i < newParticipants; i++) {
+        newParticipantsArray.push({
+          full_name: '',
+          date_of_birth: '',
+          gender: undefined,
+          contact_number: '',
+          email_address: '',
+          residential_address: '',
+          id_proof_type: undefined,
+          id_proof_number: '',
+          id_proof_file_url: '',
+        });
+      }
+      setFormData(prev => ({
+        ...prev,
+        participants_details: newParticipantsArray
+      }));
+    } else if (newParticipants < currentParticipants) {
+      // Remove excess participants
+      setFormData(prev => ({
+        ...prev,
+        participants_details: prev.participants_details.slice(0, newParticipants)
+      }));
+    }
+  }, [formData.participants, formData.participants_details]);
+
+  type SectionMap = {
+    health_fitness: HealthFitnessForm;
+    travel_preferences: TravelPreferencesForm;
+    legal_consent: LegalConsentForm;
+    optional_addons: OptionalAddonsForm;
+  };
+
+  const handleFormChange = <K extends keyof SectionMap, F extends keyof SectionMap[K]>(
+    section: K,
+    field: F,
+    value: SectionMap[K][F]
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [section]: {
+        ...(prev[section] as SectionMap[K]),
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleParticipantChange = <F extends keyof ParticipantForm>(
+    index: number,
+    field: F,
+    value: ParticipantForm[F]
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      participants_details: prev.participants_details.map((participant, i) =>
+        i === index ? { ...participant, [field]: value } : participant
+      ),
+    }));
+  };
+
+  const nextStep = () => {
+    const steps: FormStep[] = ['date', 'participants', 'health', 'travel', 'review'];
+    const currentIndex = steps.indexOf(currentStep);
+    
+    // Validate current step before proceeding
+    if (currentStep === 'participants') {
+      const isValid = validateParticipantsStep();
+      if (!isValid) {
+        setMessage('Please fill in all required participant details before proceeding.');
+        return;
+      }
+    }
+    
+    if (currentIndex < steps.length - 1) {
+      setCurrentStep(steps[currentIndex + 1]);
+      setMessage(''); // Clear any previous messages
+    }
+  };
+
+  const validateParticipantsStep = () => {
+    for (let i = 0; i < formData.participants; i++) {
+      const participant = formData.participants_details[i];
+      
+      // Check required fields
+      if (!participant.full_name?.trim()) return false;
+      if (!participant.date_of_birth) return false;
+      if (!participant.gender) return false;
+      if (!participant.contact_number?.trim()) return false;
+      if (!participant.email_address?.trim()) return false;
+      if (!participant.residential_address?.trim()) return false;
+      if (!participant.id_proof_type) return false;
+      if (!participant.id_proof_number?.trim()) return false;
+    }
+    return true;
+  };
+
+  // Removed unused isFieldValid function to satisfy no-unused-vars
+
+  const prevStep = () => {
+    const steps: FormStep[] = ['date', 'participants', 'health', 'travel', 'review'];
+    const currentIndex = steps.indexOf(currentStep);
+    if (currentIndex > 0) {
+      setCurrentStep(steps[currentIndex - 1]);
+    }
+  };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 'date':
+        return (
+    <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Select Your Trek Date</h3>
+              <p className="text-muted-foreground">Choose from available dates for your adventure</p>
+            </div>
+            
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  <span>Loading available dates...</span>
+                </div>
+              </div>
+            ) : slots.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-red-500 text-2xl">⚠️</span>
+                </div>
+                <h4 className="text-lg font-semibold text-foreground mb-2">No Available Dates</h4>
+                <p className="text-muted-foreground">Please check back later for new dates</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {slots.map((slot) => {
+                  const date = new Date(slot.date || '');
+                  const isSelected = formData.booking_date === slot.date;
+                  const availableSpots = (slot.capacity || 0) - (slot.booked || 0);
+                  const isLowAvailability = availableSpots <= 3;
+                  
+                  return (
+                    <button
+                      key={slot.id}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, booking_date: slot.date || '' }))}
+                      className={`relative p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-lg touch-manipulation ${
+                        isSelected
+                          ? 'border-primary bg-primary/10 shadow-md'
+                          : 'border-border bg-background hover:border-primary/50'
+                      }`}
+                    >
+                      {/* Date Header */}
+                      <div className="text-center mb-3">
+                        <div className="text-2xl font-bold text-foreground">
+                          {date.getDate()}
+                        </div>
+                        <div className="text-sm text-muted-foreground uppercase tracking-wide">
+                          {date.toLocaleDateString('en-US', { month: 'short' })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                        </div>
+        </div>
+
+                      {/* Availability Info */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Available:</span>
+                          <span className={`font-semibold ${
+                            isLowAvailability ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'
+                          }`}>
+                            {availableSpots} spots
+                          </span>
+                        </div>
+                        
+                        {/* Low availability warning */}
+                        {isLowAvailability && (
+                          <div className="flex items-center gap-1 text-xs text-orange-600 dark:text-orange-400">
+                            <span>⚠️</span>
+                            <span>Limited spots</span>
+          </div>
+        )}
+                      </div>
+                      
+                      {/* Selection indicator */}
+                      {isSelected && (
+                        <div className="absolute top-2 right-2">
+                          <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                            <span className="text-primary-foreground text-sm">✓</span>
+                          </div>
+          </div>
+        )}
+                    </button>
+                  );
+                })}
+      </div>
+            )}
+    </div>
+  );
+
+      case 'participants':
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Number of Participants</h3>
+              <p className="text-muted-foreground">How many people will be joining this trek?</p>
+            </div>
+            
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-foreground">
+                Participants *
+              </label>
+              <div className="flex items-center justify-center space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, participants: Math.max(1, prev.participants - 1) }))}
+                  className="w-12 h-12 bg-muted rounded-full flex items-center justify-center text-foreground hover:bg-muted/80 transition-colors touch-manipulation"
+                  disabled={formData.participants <= 1}
+                >
+                  <span className="text-xl">−</span>
+                </button>
+                <div className="w-20 text-center">
+                  <span className="text-3xl font-bold text-foreground">{formData.participants}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, participants: Math.min(10, prev.participants + 1) }))}
+                  className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors touch-manipulation"
+                  disabled={formData.participants >= 10}
+                >
+                  <span className="text-xl">+</span>
+                </button>
+              </div>
+              <p className="text-center text-sm text-muted-foreground">
+                Maximum 10 participants per booking
+              </p>
+            </div>
+
+            {/* Participant Details */}
+            <div className="space-y-6">
+              <h4 className="text-lg font-semibold text-foreground">Participant Details</h4>
+              {formData.participants_details.map((participant, index) => (
+                <div key={index} className="bg-muted/30 rounded-lg p-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h5 className="font-medium text-foreground">
+                      {index === 0 ? 'Primary Participant' : `Participant ${index + 1}`}
+                    </h5>
+                    {index > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        {profileLoading ? (
+                          <span>Loading profile...</span>
+                        ) : (
+                          <span>Use options below to copy from primary</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Full Name * {index === 0 && (
+                          profileLoading ? (
+                            <span className="text-xs text-muted-foreground">(Loading from profile...)</span>
+                          ) : userProfile ? (
+                            <span className="text-xs text-green-600">(Loaded from profile)</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">(Enter manually)</span>
+                          )
+                        )}
+                      </label>
+                      <input
+                        type="text"
+                        value={participant.full_name}
+                        onChange={(e) => handleParticipantChange(index, 'full_name', e.target.value)}
+                        required
+                        disabled={index === 0 && profileLoading}
+                        className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none disabled:opacity-50"
+                        placeholder={index === 0 ? "Loading from your profile..." : "Enter full name"}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Date of Birth *
+                      </label>
+                      <input
+                        type="date"
+                        value={participant.date_of_birth}
+                        onChange={(e) => handleParticipantChange(index, 'date_of_birth', e.target.value)}
+                        max={trekMinDob}
+                        required
+                        className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Gender
+                      </label>
+                      <select
+                        value={participant.gender || ''}
+                        onChange={(e) => handleParticipantChange(index, 'gender', e.target.value as ParticipantForm['gender'])}
+                        className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:border-primary focus:outline-none"
+                      >
+                        <option value="">Select gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Contact Number *
+                      </label>
+                      <input
+                        type="tel"
+                        value={participant.contact_number}
+                        onChange={(e) => handleParticipantChange(index, 'contact_number', e.target.value)}
+                        required
+                        className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                    
+                    <div className="sm:col-span-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-foreground">
+                          Email Address {index === 0 && (
+                            <span className="text-xs text-muted-foreground font-normal">(from your account)</span>
+                          )}
+                        </label>
+                        {index > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const primaryEmail = formData.participants_details[0]?.email_address || '';
+                              handleParticipantChange(index, 'email_address', primaryEmail);
+                            }}
+                            className="text-xs text-primary hover:text-primary/80 underline"
+                          >
+                            Same as Primary
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        type="email"
+                        value={participant.email_address}
+                        onChange={(e) => handleParticipantChange(index, 'email_address', e.target.value)}
+                        disabled={index === 0} // Primary participant email cannot be changed
+                        className={`w-full px-4 py-3 border border-border rounded-lg text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none ${
+                          index === 0 
+                            ? 'bg-muted cursor-not-allowed opacity-75' 
+                            : 'bg-background'
+                        }`}
+                        placeholder={index === 0 ? "Email from your account (cannot be changed)" : "Enter email address"}
+                        title={index === 0 ? "This email is from your account and cannot be changed" : undefined}
+                      />
+                    </div>
+                    
+                    <div className="sm:col-span-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-foreground">
+                          Residential Address
+                        </label>
+                        {index > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const primaryAddress = formData.participants_details[0]?.residential_address || '';
+                              handleParticipantChange(index, 'residential_address', primaryAddress);
+                            }}
+                            className="text-xs text-primary hover:text-primary/80 underline"
+                          >
+                            Same as Primary
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        value={participant.residential_address}
+                        onChange={(e) => handleParticipantChange(index, 'residential_address', e.target.value)}
+                        rows={3}
+                        className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
+                        placeholder="Enter residential address"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        ID Proof Type
+                      </label>
+                      <select
+                        value={participant.id_proof_type || ''}
+                        onChange={(e) => handleParticipantChange(index, 'id_proof_type', e.target.value as ParticipantForm['id_proof_type'])}
+                        className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:border-primary focus:outline-none"
+                      >
+                        <option value="">Select ID proof type</option>
+                        <option value="aadhaar">Aadhaar Card</option>
+                        <option value="passport">Passport</option>
+                        <option value="driving_license">Driving License</option>
+                        <option value="pan_card">PAN Card</option>
+                        <option value="voter_id">Voter ID</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        ID Proof Number
+                      </label>
+                      <input
+                        type="text"
+                        value={participant.id_proof_number}
+                        onChange={(e) => handleParticipantChange(index, 'id_proof_number', e.target.value)}
+                        className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
+                        placeholder="Enter ID proof number"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case 'health':
+        return (
+    <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Health & Fitness Information</h3>
+              <p className="text-muted-foreground">Please provide your health details for safety</p>
+            </div>
+      
+      <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Medical Conditions
+                </label>
+          <textarea
+            value={formData.health_fitness.medical_conditions}
+            onChange={(e) => handleFormChange('health_fitness', 'medical_conditions', e.target.value)}
+            rows={3}
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
+                  placeholder="Any medical conditions we should be aware of..."
+          />
+        </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Recent Illnesses
+                </label>
+          <textarea
+            value={formData.health_fitness.recent_illnesses}
+            onChange={(e) => handleFormChange('health_fitness', 'recent_illnesses', e.target.value)}
+            rows={3}
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
+                  placeholder="Any recent illnesses or injuries..."
+          />
+        </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Current Medications
+                </label>
+          <textarea
+            value={formData.health_fitness.current_medications}
+            onChange={(e) => handleFormChange('health_fitness', 'current_medications', e.target.value)}
+            rows={3}
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
+                  placeholder="Any medications you're currently taking..."
+          />
+        </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Trekking Experience
+                </label>
+          <select
+            value={formData.health_fitness.trekking_experience || ''}
+                  onChange={(e) => handleFormChange('health_fitness', 'trekking_experience', e.target.value as HealthFitnessForm['trekking_experience'])}
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:border-primary focus:outline-none"
+                >
+                  <option value="">Select experience level</option>
+                  <option value="beginner">Beginner (First time)</option>
+                  <option value="intermediate">Intermediate (1-5 treks)</option>
+                  <option value="advanced">Advanced (5+ treks)</option>
+                  <option value="expert">Expert (10+ treks)</option>
+          </select>
+        </div>
+
+              <div className="flex items-start space-x-3">
+          <input
+            type="checkbox"
+                  id="fitness-consent"
+            checked={formData.health_fitness.fitness_consent}
+            onChange={(e) => handleFormChange('health_fitness', 'fitness_consent', e.target.checked)}
+                  className="mt-1 w-4 h-4 text-primary border-border rounded focus:ring-primary focus:ring-2"
+          />
+                <label htmlFor="fitness-consent" className="text-sm text-foreground">
+                  I confirm that I am physically fit and able to participate in this trek
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+
+      case 'travel':
+        return (
+    <div className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Travel & Accommodation Preferences</h3>
+              <p className="text-muted-foreground">Help us customize your experience</p>
+            </div>
+      
+      <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+          <input
+            type="checkbox"
+                  id="needs-transportation"
+            checked={formData.travel_preferences.needs_transportation}
+            onChange={(e) => handleFormChange('travel_preferences', 'needs_transportation', e.target.checked)}
+                  className="mt-1 w-4 h-4 text-primary border-border rounded focus:ring-primary focus:ring-2"
+          />
+                <label htmlFor="needs-transportation" className="text-sm text-foreground">
+            I need transportation to the trek starting point
+          </label>
+        </div>
+
+        {formData.travel_preferences.needs_transportation && (
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Preferred Pickup Point
+                  </label>
+            <input
+              type="text"
+              value={formData.travel_preferences.pickup_point}
+              onChange={(e) => handleFormChange('travel_preferences', 'pickup_point', e.target.value)}
+                    className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
+                    placeholder="e.g., Delhi Airport, Railway Station, etc."
+            />
+          </div>
+        )}
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Accommodation Preferences
+                </label>
+          <textarea
+            value={formData.travel_preferences.accommodation_preferences}
+            onChange={(e) => handleFormChange('travel_preferences', 'accommodation_preferences', e.target.value)}
+            rows={3}
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
+                  placeholder="Any specific accommodation preferences or requirements..."
+          />
+        </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  Special Requirements
+                </label>
+          <textarea
+            value={formData.special_requirements}
+            onChange={(e) => setFormData(prev => ({ ...prev, special_requirements: e.target.value }))}
+            rows={3}
+                  className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:border-primary focus:outline-none"
+                  placeholder="Any other special requirements or requests..."
+          />
+        </div>
+      return (
+    <div className="max-w-5xl mx-auto">
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-2xl p-8 mb-8 border border-blue-100 dark:border-blue-800">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Book Your Adventure
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300 text-lg">
+              {trekName} • Complete your booking in {steps.length} simple steps
+            </p>
+                  <span className="text-muted-foreground">Participants:</span>
+                  <span className="ml-2 font-medium text-foreground">{formData.participants}</span>
+                </div>
+              </div>
+
+              {/* Price Breakdown */}
+              {priceBreakdown && (
+  <div className="border-t border-border pt-4 space-y-3">
+    <h5 className="font-medium text-foreground">Price Breakdown</h5>
+    <div className="overflow-x-auto">
+      <table className="min-w-full text-sm text-left border border-border rounded-lg">
+  <thead className="bg-muted/60">
+    <tr>
+      <th className="py-2 px-4 font-semibold text-muted-foreground">Description</th>
+      <th className="py-2 px-4 font-semibold text-muted-foreground text-center">Quantity</th>
+      <th className="py-2 px-4 font-semibold text-muted-foreground text-right">Amount (₹)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr className="border-b border-border">
+      <td className="py-2 px-4">Base Price</td>
+      <td className="py-2 px-4 text-center">{formData.participants}</td>
+      <td className="py-2 px-4 text-right">{(priceBreakdown.base_price * formData.participants).toLocaleString()}</td>
+    </tr>
+    <tr className="border-b border-border">
+      <td className="py-2 px-4">GST ({priceBreakdown.gst_percentage})</td>
+      <td className="py-2 px-4 text-center">{formData.participants}</td>
+      <td className="py-2 px-4 text-right">{(priceBreakdown.gst_amount * formData.participants).toLocaleString()}</td>
+    </tr>
+    <tr className="bg-muted/30">
+      <td className="py-2 px-4 font-semibold">Total (per person)</td>
+      <td className="py-2 px-4 text-center">{formData.participants}</td>
+      <td className="py-2 px-4 text-right font-semibold">{(totalAmount * formData.participants).toLocaleString()}</td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+    <div className="flex justify-end pt-4">
+      <span className="text-base font-bold text-primary">Total Payable Amount: ₹{(totalAmount * formData.participants).toLocaleString()}</span>
+    </div>
+    <div className="text-xs text-muted-foreground pt-1">
+      <span>All prices are inclusive of GST.</span>
+    </div>
+  </div>
+)}
+            </div>
+
+            {/* Legal Consent */}
+      <div className="space-y-4">
+              <h4 className="font-semibold text-foreground">Terms & Conditions</h4>
+              
+              <div className="space-y-3">
+            <div className="flex items-start space-x-3">
+              <input
+                type="checkbox"
+                    id="terms-accepted"
+                checked={formData.legal_consent.terms_accepted}
+                onChange={(e) => handleFormChange('legal_consent', 'terms_accepted', e.target.checked)}
+                    className="mt-1 w-4 h-4 text-primary border-border rounded focus:ring-primary focus:ring-2"
+              />
+                  <label htmlFor="terms-accepted" className="text-sm text-foreground">
+                    I accept the terms and conditions of the trek
+              </label>
+            </div>
+
+            <div className="flex items-start space-x-3">
+              <input
+                type="checkbox"
+                    id="liability-waiver"
+                checked={formData.legal_consent.liability_waiver_accepted}
+                onChange={(e) => handleFormChange('legal_consent', 'liability_waiver_accepted', e.target.checked)}
+                    className="mt-1 w-4 h-4 text-primary border-border rounded focus:ring-primary focus:ring-2"
+              />
+                  <label htmlFor="liability-waiver" className="text-sm text-foreground">
+                    I accept the liability waiver and understand the risks involved
+              </label>
+            </div>
+
+            <div className="flex items-start space-x-3">
+              <input
+                type="checkbox"
+                    id="covid-declaration"
+                checked={formData.legal_consent.covid_declaration_accepted}
+                onChange={(e) => handleFormChange('legal_consent', 'covid_declaration_accepted', e.target.checked)}
+                    className="mt-1 w-4 h-4 text-primary border-border rounded focus:ring-primary focus:ring-2"
+              />
+                  <label htmlFor="covid-declaration" className="text-sm text-foreground">
+                    I confirm that I am not experiencing COVID-19 symptoms
+              </label>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+      default:
+        return null;
+    }
+  };
+
+  const getStepTitle = (step: FormStep) => {
+    const titles = {
+      date: 'Select Date',
+      participants: 'Participant Details',
+      health: 'Health & Fitness',
+      travel: 'Travel & Accommodation Preferences',
+      review: 'Review & Confirm'
+    };
+    return titles[step];
+  };
+
+  const steps: FormStep[] = ['date', 'participants', 'health', 'travel', 'review'];
+  const currentStepIndex = steps.indexOf(currentStep);
+
+  const handleSubmitBooking = async () => {
+    // Validate that primary participant has all required contact information
+    const primaryParticipant = formData.participants_details[0];
+    if (!primaryParticipant?.contact_number?.trim()) {
+      setMessage('Primary participant must have a contact number to submit booking.');
+      return;
+    }
+    if (!primaryParticipant?.email_address?.trim()) {
+      setMessage('Primary participant must have an email address to submit booking.');
+      return;
+    }
+    
+    try {
+      setMessage('Submitting your booking request...');
+      
+      // Submit booking directly to enhanced API
+      const response = await fetch('/api/bookings/enhanced', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setMessage('Booking request submitted successfully! Redirecting to confirmation page...');
+        
+        // Redirect to success page immediately
+        setTimeout(() => {
+          router.push(`/booking-success/${result.booking?.id}`);
+        }, 1500);
+      } else {
+        setMessage(result.error || 'Failed to submit booking request. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting booking:', error);
+      setMessage('An error occurred while submitting your booking. Please try again.');
+    }
+  };
+
+  return (
+    <div className="bg-white/90 dark:bg-[#232946] rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 border border-border mt-8 max-w-4xl mx-auto">
+      <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6 text-center sm:text-left">Book {trekName}</h2>
+      
+      {/* Mobile-Optimized Progress Bar */}
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-center justify-center space-x-2 sm:space-x-4 mb-2">
+          {steps.map((step, index) => (
+            <div key={step} className="flex items-center">
+              <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs font-medium ${
+                index <= currentStepIndex 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+              }`}>
+                {index + 1}
+              </div>
+              {index < steps.length - 1 && (
+                <div className={`w-4 sm:w-8 h-1 mx-1 sm:mx-2 ${
+                  index < currentStepIndex ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700'
+                }`} />
+              )}
+            </div>
+          ))}
+        </div>
+        <p className="text-xs sm:text-sm text-muted-foreground text-center">
+          Step {currentStepIndex + 1} of {steps.length}: {getStepTitle(currentStep)}
+        </p>
+      </div>
+
+      {message && (
+        <div className={`p-3 sm:p-4 rounded-lg mb-4 sm:mb-6 text-sm ${
+          message.includes('successfully')
+            ? 'bg-green-100 text-green-800 border border-green-200'
+            : 'bg-red-100 text-red-800 border border-red-200'
+        }`}>
+          {message}
+        </div>
+      )}
+
+      <div className="space-y-4 sm:space-y-6">
+        {renderStepContent()}
+        
+        {/* Mobile-Optimized Navigation Buttons */}
+        <div className="flex flex-col sm:flex-row justify-between gap-3 pt-4 sm:pt-6">
+          {currentStepIndex > 0 && (
+            <button
+              type="button"
+              onClick={prevStep}
+              className="w-full sm:w-auto px-6 py-3 bg-muted text-muted-foreground rounded-lg font-semibold hover:bg-muted/80 transition-colors touch-manipulation"
+            >
+              ← Previous
+            </button>
+          )}
+          
+          {currentStepIndex < steps.length - 1 ? (
+            <button
+              type="button"
+              onClick={nextStep}
+              disabled={
+                (currentStep === 'date' && !formData.booking_date) ||
+                (currentStep === 'participants' && !validateParticipantsStep())
+              }
+              className="w-full sm:w-auto px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+            >
+              Next →
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={!formData.legal_consent.terms_accepted || !formData.legal_consent.liability_waiver_accepted || !formData.legal_consent.covid_declaration_accepted}
+              onClick={handleSubmitBooking}
+              className="w-full sm:w-auto px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+            >
+              Submit Booking Request
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
