@@ -9,10 +9,10 @@ const supabase = createClient(
 // POST /api/faqs/[id]/view - Increment view count for FAQ
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const faqId = params.id;
+    const { id: faqId } = await params;
 
     // Check if FAQ exists
     const { data: faq } = await supabase

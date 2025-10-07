@@ -10,6 +10,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+export const dynamic = 'force-dynamic'; // Force dynamic rendering for searchParams
 export const revalidate = 3600; // ISR: revalidate every hour
 
 export const metadata: Metadata = {
@@ -42,13 +43,14 @@ interface Blog {
 export default async function BlogsPage({
   searchParams
 }: {
-  searchParams: { author?: string }
+  searchParams: Promise<{ author?: string }>
 }) {
   try {
     console.log('Fetching blogs from database...');
     
     // Get author filter from search params
-    const authorFilter = searchParams?.author;
+    const resolvedSearchParams = await searchParams;
+    const authorFilter = resolvedSearchParams?.author;
     
     // First, check if the blogs table exists
     const { error: tableError } = await supabase

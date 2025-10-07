@@ -10,7 +10,7 @@ const supabase = createClient(
 // POST /api/faqs/[id]/vote - Vote on an FAQ
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { user, session } = await validateRequest();
@@ -21,7 +21,8 @@ export async function POST(
 
     const body = await request.json();
     const { vote_type } = body;
-    const faqId = params.id;
+    const { id } = await params;
+    const faqId = id;
 
     if (!vote_type || !['upvote', 'downvote'].includes(vote_type)) {
       return NextResponse.json({ 
@@ -112,7 +113,7 @@ export async function POST(
 // DELETE /api/faqs/[id]/vote - Remove vote from FAQ
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { user, session } = await validateRequest();
@@ -121,7 +122,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const faqId = params.id;
+    const { id } = await params;
+    const faqId = id;
 
     // Remove user's vote
     const { error: deleteError } = await supabase

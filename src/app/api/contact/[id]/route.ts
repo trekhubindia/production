@@ -5,12 +5,12 @@ import sendQAReplyEmailEnhanced from '@/lib/email-service-enhanced';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = supabaseAdmin;
     const body = await request.json();
-    const { id } = params;
+    const { id } = await params;
     
     const { status, admin_reply, admin_notes } = body;
     
@@ -91,11 +91,11 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = supabaseAdmin;
-    const { id } = params;
+    const { id } = await params;
     
     const { error } = await supabase
       .from('contact_messages')
