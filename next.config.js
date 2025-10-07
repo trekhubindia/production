@@ -56,6 +56,12 @@ const baseConfig = {
       transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
     },
   },
+  // Skip problematic pages during static generation
+  generateBuildId: async () => {
+    return 'production-build'
+  },
+  // Output configuration for better compatibility
+  output: 'standalone',
 };
 
 module.exports = withBundleAnalyzer(baseConfig);
