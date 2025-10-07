@@ -4,10 +4,7 @@ import './globals.css';
 import '@/styles/smooth-animations.css';
 import Providers from '@/components/Providers';
 import ClientLayout from '@/components/ClientLayout';
-import PerformanceMonitor from '@/components/PerformanceMonitor';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
-import GADebugger from '@/components/GADebugger';
-import AnalyticsTestButton from '@/components/AnalyticsTestButton';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -145,8 +142,6 @@ export default function RootLayout({
             {children}
           </ClientLayout>
           <GoogleAnalytics />
-          <PerformanceMonitor />
-          <GADebugger />
         </Providers>
       </body>
     </html>

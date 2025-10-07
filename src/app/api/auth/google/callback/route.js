@@ -86,23 +86,15 @@ export async function GET(request) {
     userId = randomUUID();
   }
 
-  // Log upsert data for debugging
-  console.log('Upserting user:', {
-    id: userId,
-    email: userInfo.email,
-    name: userInfo.name || userInfo.email,
-    avatar_url: userInfo.picture || null,
-    provider: 'google',
-    is_activated: true,
-    activation_token: activationToken,
-  });
-
   if (existingUser && existingUser.provider !== 'google') {
     return NextResponse.redirect(`${BASE_URL}/auth?error=registered_with_different_method`);
   }
 
-  // Upsert user into auth_user with provider: 'google' (no username)
+  // Generate activation token before using it
   const activationToken = randomUUID();
+
+
+  // Upsert user into auth_user with provider: 'google' (no username)
   const { data: user, error: userError } = await supabaseAdmin
     .from('auth_user')
     .upsert({

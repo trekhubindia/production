@@ -40,10 +40,9 @@ export default function GoogleAnalytics() {
           page_path: window.location.pathname
         });
 
-        console.log('✅ Google Analytics initialized:', GA_TRACKING_ID);
-        console.log('📊 Current URL:', window.location.href);
-        console.log('📄 Page Title:', document.title);
-        console.log('🍪 Cookie Domain:', window.location.hostname.includes('localhost') ? 'none' : 'auto');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Google Analytics initialized:', GA_TRACKING_ID);
+        }
       }
     };
 
@@ -53,7 +52,9 @@ export default function GoogleAnalytics() {
       script.async = true;
       script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`;
       script.onload = () => {
-        console.log('📥 Google Analytics script loaded successfully');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Google Analytics script loaded');
+        }
         initGA();
       };
       script.onerror = () => console.error('❌ Failed to load Google Analytics script');
@@ -63,10 +64,8 @@ export default function GoogleAnalytics() {
     // Check if script is already loaded
     const existingScript = document.querySelector(`script[src*="gtag/js?id=${GA_TRACKING_ID}"]`);
     if (!existingScript) {
-      console.log('🚀 Loading Google Analytics script...');
       loadGA();
     } else {
-      console.log('♻️ Google Analytics script already loaded, initializing...');
       initGA();
     }
   }, []);
@@ -74,7 +73,6 @@ export default function GoogleAnalytics() {
   useEffect(() => {
     if (pathname) {
       const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
-      console.log('📈 Tracking page view:', url);
       pageview(url);
     }
   }, [pathname, searchParams]);
