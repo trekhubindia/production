@@ -1,4 +1,4 @@
-import trekData from '../../data/treks.json';
+import trekData from '../data/treks.json';
 import { createClient } from '@supabase/supabase-js';
 import { createTrekCache, CACHE_DURATIONS } from './cache';
 
