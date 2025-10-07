@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create reset URL
-    const resetUrl = `https://trekhubindia.com/reset-password?token=${resetToken}`;
+    const resetUrl = `https://nomadictravels.shop/reset-password?token=${resetToken}`;
     console.log('[ForgotPassword] Step 7: Reset URL created', { resetUrl });
 
     // Remove name from password reset email call

@@ -119,8 +119,8 @@ export async function sendQAReplyEmailEnhanced({
           <div class="contact-info">
             <p><strong>Contact Us</strong></p>
             <p>📞 <a href="tel:+919876543210">+91 98765 43210</a></p>
-            <p>📧 <a href="mailto:info@trekhubindia.com">info@trekhubindia.com</a></p>
-            <p>🌐 <a href="https://trekhubindia.com">www.trekhubindia.com</a></p>
+            <p>📧 <a href="mailto:info@nomadictravels.shop">info@nomadictravels.shop</a></p>
+            <p>🌐 <a href="https://nomadictravels.shop">www.nomadictravels.shop</a></p>
           </div>
           
           <p style="margin-top: 20px; font-size: 12px; color: #94a3b8;">
@@ -152,8 +152,8 @@ The Trek Hub India Team
 
 Contact Us:
 Phone: +91 98765 43210
-Email: info@trekhubindia.com
-Website: www.trekhubindia.com
+Email: info@nomadictravels.shop
+Website: www.nomadictravels.shop
 
 Trek Hub India - Adventure Hub, Tapovan, Rishikesh, Uttarakhand 249192
   `;

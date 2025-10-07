@@ -6,7 +6,7 @@
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
   // Set your production site URL via env or fallback
-  siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://trekhubindia.com',
+  siteUrl: process.env.SITE_URL || 'https://nomadictravels.shop',
 
   // Generate robots.txt along with sitemaps
   generateRobotsTxt: true,

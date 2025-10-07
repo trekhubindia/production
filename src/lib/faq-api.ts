@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase';
+import { createFAQCache, CACHE_DURATIONS } from './cache';
 
 export interface FAQ {
   id: string;
@@ -22,9 +23,9 @@ export interface FAQResponse {
 }
 
 /**
- * Fetch FAQs from database (server-side only)
+ * Internal function to fetch FAQs from database (will be cached)
  */
-export async function getFAQs(options: {
+async function _getFAQs(options: {
   limit?: number;
   featured?: boolean;
   trek_slug?: string;
@@ -104,6 +105,13 @@ export async function getFAQs(options: {
     };
   }
 }
+
+// Cached version of getFAQs
+export const getFAQs = createFAQCache(
+  _getFAQs,
+  'faqs',
+  CACHE_DURATIONS.LONG
+);
 
 /**
  * Update FAQ priority scores for all FAQs

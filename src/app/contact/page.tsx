@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     title: 'Contact Trek Hub India - Expert Trekking Support',
     description: 'Get professional guidance from our experienced team for your next Himalayan adventure. 24/7 support available.',
     type: 'website',
-    url: 'https://trekhubindia.com/contact',
+    url: 'https://nomadictravels.shop/contact',
   },
 };
 
@@ -48,10 +48,10 @@ export default function ContactPage() {
       icon: Mail,
       title: 'Email Us',
       subtitle: 'Response within 2 hours',
-      details: ['info@trekhubindia.com', 'bookings@trekhubindia.com'],
+      details: ['info@nomadictravels.shop', 'bookings@nomadictravels.shop'],
       description: 'Send us detailed inquiries and get comprehensive responses',
       action: 'Send Email',
-      href: 'mailto:info@trekhubindia.com'
+      href: 'mailto:info@nomadictravels.shop'
     },
     {
       icon: MessageCircle,
@@ -176,7 +176,7 @@ export default function ContactPage() {
               Call Now: +91 98765 43210
             </a>
             <a 
-              href="mailto:info@trekhubindia.com"
+              href="mailto:info@nomadictravels.shop"
               className="border-2 border-black dark:border-white text-black dark:text-white px-8 py-4 rounded-2xl font-semibold hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-all duration-300 inline-flex items-center gap-3"
             >
               <Mail className="w-5 h-5" />

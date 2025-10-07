@@ -8,6 +8,15 @@ const baseConfig = {
   // Keep type checks and linting during build; adjust if needed
   typescript: { ignoreBuildErrors: false },
   eslint: { ignoreDuringBuilds: false },
+  // Enable experimental features for better performance
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+  },
+  // Enable compression
+  compress: true,
+  // Enable SWC minification
+  swcMinify: true,
   images: {
     // Allow external images used in the app
     domains: [
@@ -16,8 +25,11 @@ const baseConfig = {
       'cdn.pixabay.com',
       'source.unsplash.com'
     ],
-    // Disable optimizer to avoid server-side fetch timeouts for remote images
-    unoptimized: true,
+    // Enable image optimization with proper formats
+    formats: ['image/webp', 'image/avif'],
+    // Add image sizes for better optimization
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     // Explicitly allow image sources
     remotePatterns: [
       {

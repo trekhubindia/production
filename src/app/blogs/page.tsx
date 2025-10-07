@@ -11,7 +11,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const dynamic = 'force-dynamic'; // Force dynamic rendering for searchParams
-export const revalidate = 3600; // ISR: revalidate every hour
+export const revalidate = 1800; // ISR: revalidate every 30 minutes (improved from 1 hour)
 
 export const metadata: Metadata = {
   title: 'Blog — Trekking Stories & Insights',
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     title: 'Blog — Trekking Stories & Insights',
     description: 'Read our latest trekking stories and adventure insights.',
     type: 'website',
-    url: 'https://trekhubindia.com/blogs',
+    url: 'https://nomadictravels.shop/blogs',
   },
 };
 

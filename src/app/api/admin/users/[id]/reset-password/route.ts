@@ -81,7 +81,7 @@ export async function POST(
     }
 
     // Send password reset email
-    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://trekhubindia.com'}/reset-password?token=${resetToken}`;
+    const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://nomadictravels.shop'}/reset-password?token=${resetToken}`;
     
     // Log environment variables for debugging (remove in production)
     console.log('Email service debug:', {

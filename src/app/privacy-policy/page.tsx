@@ -211,7 +211,7 @@ export default function PrivacyPolicyPage() {
               <p className="text-foreground/80 mb-2">Data Protection Officer</p>
               <p className="text-foreground/80 mb-2">Adventure Hub, Tapovan, Rishikesh</p>
               <p className="text-foreground/80 mb-2">Uttarakhand 249192, India</p>
-              <p className="text-foreground/80 mb-2">Email: privacy@trekhubindia.com</p>
+              <p className="text-foreground/80 mb-2">Email: privacy@nomadictravels.shop</p>
               <p className="text-foreground/80 mb-2">Phone: +91 98765 43210</p>
               <p className="text-foreground/80">Response Time: Within 30 days</p>
             </div>

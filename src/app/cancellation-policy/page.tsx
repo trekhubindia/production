@@ -34,7 +34,7 @@ export default function CancellationPolicyPage() {
               This Cancellation Policy outlines the terms and conditions for cancelling trek bookings with Trek Hub India. We understand that plans can change, and we strive to be fair while also protecting our business operations and commitments to guides, porters, and local communities.
             </p>
             <p className="text-foreground/80">
-              All cancellations must be made in writing via email to <strong>bookings@trekhubindia.com</strong> and will be processed based on the date we receive your cancellation request.
+              All cancellations must be made in writing via email to <strong>bookings@nomadictravels.shop</strong> and will be processed based on the date we receive your cancellation request.
             </p>
           </section>
 
@@ -168,7 +168,7 @@ export default function CancellationPolicyPage() {
             <div className="bg-muted/20 border border-muted rounded-lg p-6 mb-4">
               <h4 className="font-semibold mb-3">Step-by-Step Process:</h4>
               <ol className="list-decimal pl-6 space-y-2 text-foreground/80">
-                <li>Send cancellation request to <strong>bookings@trekhubindia.com</strong></li>
+                <li>Send cancellation request to <strong>bookings@nomadictravels.shop</strong></li>
                 <li>Include booking reference number and reason for cancellation</li>
                 <li>Provide supporting documents if claiming special circumstances</li>
                 <li>Receive cancellation confirmation within 24 hours</li>
@@ -272,7 +272,7 @@ export default function CancellationPolicyPage() {
               <p className="text-foreground mb-4"><strong>For all cancellation requests and queries:</strong></p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-foreground/80 mb-2"><strong>Email:</strong> bookings@trekhubindia.com</p>
+                  <p className="text-foreground/80 mb-2"><strong>Email:</strong> bookings@nomadictravels.shop</p>
                   <p className="text-foreground/80 mb-2"><strong>Phone:</strong> +91 98765 43210</p>
                   <p className="text-foreground/80"><strong>WhatsApp:</strong> +91 98765 43210</p>
                 </div>

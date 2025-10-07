@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import { getAllTreks } from '@/lib/trek-data';
 import ImprovedTreksPage from '@/components/ImprovedTreksPage';
 
-export const revalidate = 300; // ISR: revalidate every 5 minutes
+export const revalidate = 900; // ISR: revalidate every 15 minutes (optimized for trek data)
 
 export const metadata: Metadata = {
   title: 'All Himalayan Treks',
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     title: 'All Himalayan Treks',
     description: 'Discover amazing Himalayan adventures with our complete trek collection.',
     type: 'website',
-    url: 'https://trekhubindia.com/treks',
+    url: 'https://nomadictravels.shop/treks',
   },
 };
 

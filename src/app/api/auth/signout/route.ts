@@ -26,10 +26,10 @@ export async function POST() {
     });
 
     // Redirect to homepage instead of returning JSON
-    return NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_SITE_URL || 'https://trekhubindia.com'));
+    return NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_SITE_URL || 'https://nomadictravels.shop'));
   } catch (error) {
     console.error('Signout error:', error);
     // Even on error, redirect to homepage
-    return NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_SITE_URL || 'https://trekhubindia.com'));
+    return NextResponse.redirect(new URL('/', process.env.NEXT_PUBLIC_SITE_URL || 'https://nomadictravels.shop'));
   }
 } 

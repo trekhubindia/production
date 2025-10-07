@@ -98,7 +98,7 @@ export const trackContactForm = (formType: string) => {
   });
 };
 
-// Declare gtag function for TypeScript
+// Declare gtag function and dataLayer for TypeScript
 declare global {
   interface Window {
     gtag: (
@@ -106,5 +106,6 @@ declare global {
       targetId: string | Date,
       config?: any
     ) => void;
+    dataLayer: any[];
   }
 }

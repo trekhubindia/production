@@ -1,28 +1,79 @@
- 
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 
+// Critical components loaded immediately
 import OptimizedHeroSlider from '@/components/OptimizedHeroSlider';
 import UpcomingTreks from '@/components/UpcomingTreks';
 import WhyChooseUs from '@/components/WhyChooseUs';
-import Expertise from '@/components/Expertise';
-import FeaturedTreksSection from '@/components/FeaturedTreksSection';
-import TrekLeadersSection from '@/components/TrekLeadersSection';
-import SeasonalTrekkingCalendar from '@/components/AdventureHighlightsSection';
-import OptimizedTrekDestinationsSection from '@/components/OptimizedTrekDestinationsSection';
-import TestimonialsSection from '@/components/TestimonialsSection';
-import SafetyGuideSection from '@/components/SafetyGuideSection';
-import BlogHighlightsSection from '@/components/BlogHighlightsSection';
-import PhotoGallerySection from '@/components/PhotoGallerySection';
-import PartnersSection from '@/components/PartnersSection';
-import StatsSection from '@/components/StatsSection';
-import FAQSection from '@/components/FAQSection';
-import About from '@/components/About';
 import Footer from '@/components/Footer';
-import FloatingChatbot from '@/components/FloatingChatbot';
-import ShareButtons from '@/components/ShareButtons';
+
+// Lazy load non-critical components for better performance
+const Expertise = dynamic(() => import('@/components/Expertise'), {
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const FeaturedTreksSection = dynamic(() => import('@/components/FeaturedTreksSection'), {
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const TrekLeadersSection = dynamic(() => import('@/components/TrekLeadersSection'), {
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const SeasonalTrekkingCalendar = dynamic(() => import('@/components/AdventureHighlightsSection'), {
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const OptimizedTrekDestinationsSection = dynamic(() => import('@/components/OptimizedTrekDestinationsSection'), {
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const TestimonialsSection = dynamic(() => import('@/components/TestimonialsSection'), {
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const SafetyGuideSection = dynamic(() => import('@/components/SafetyGuideSection'), {
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const BlogHighlightsSection = dynamic(() => import('@/components/BlogHighlightsSection'), {
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const PhotoGallerySection = dynamic(() => import('@/components/PhotoGallerySection'), {
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const PartnersSection = dynamic(() => import('@/components/PartnersSection'), {
+  loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const StatsSection = dynamic(() => import('@/components/StatsSection'), {
+  loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const FAQSection = dynamic(() => import('@/components/FAQSection'), {
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const About = dynamic(() => import('@/components/About'), {
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+
+const FloatingChatbot = dynamic(() => import('@/components/FloatingChatbot'), {
+  ssr: false // Client-side only
+});
+
+const ShareButtons = dynamic(() => import('@/components/ShareButtons'), {
+  ssr: false // Client-side only
+});
 
 import { getHomepageFAQs } from '@/lib/faq-api';
 import faqData from '@/lib/faq-data';
 import type { Metadata } from 'next';
+
+// Add caching for homepage
+export const revalidate = 1800; // ISR: revalidate every 30 minutes
 
 export const metadata: Metadata = {
   title: 'Guided Himalayan Treks in India',
@@ -57,24 +108,63 @@ export default async function HomePage() {
         </div>
         <UpcomingTreks />
         <WhyChooseUs />
-        <Expertise />
-        <FeaturedTreksSection />
-        <TrekLeadersSection />
-        <SeasonalTrekkingCalendar />
-        <OptimizedTrekDestinationsSection />
-        <TestimonialsSection />
-        <SafetyGuideSection />
-        <BlogHighlightsSection />
-        <PhotoGallerySection />
-        <PartnersSection />
-        <StatsSection />
-        <FAQSection 
-          faqs={faqs} 
-          title="Frequently Asked Questions"
-          subtitle="Everything you need to know about Himalayan trekking"
-          maxItems={6}
-        />
-        <About />
+        
+        <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <Expertise />
+        </Suspense>
+        
+        <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <FeaturedTreksSection />
+        </Suspense>
+        
+        <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <TrekLeadersSection />
+        </Suspense>
+        
+        <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <SeasonalTrekkingCalendar />
+        </Suspense>
+        
+        <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <OptimizedTrekDestinationsSection />
+        </Suspense>
+        
+        <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <TestimonialsSection />
+        </Suspense>
+        
+        <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <SafetyGuideSection />
+        </Suspense>
+        
+        <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <BlogHighlightsSection />
+        </Suspense>
+        
+        <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <PhotoGallerySection />
+        </Suspense>
+        
+        <Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <PartnersSection />
+        </Suspense>
+        
+        <Suspense fallback={<div className="h-64 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <StatsSection />
+        </Suspense>
+        
+        <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <FAQSection 
+            faqs={faqs} 
+            title="Frequently Asked Questions"
+            subtitle="Everything you need to know about Himalayan trekking"
+            maxItems={6}
+          />
+        </Suspense>
+        
+        <Suspense fallback={<div className="h-96 bg-gray-100 animate-pulse rounded-lg mx-4 my-8" />}>
+          <About />
+        </Suspense>
               </main>
         <Footer />
         <FloatingChatbot />

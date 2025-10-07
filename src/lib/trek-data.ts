@@ -1,5 +1,6 @@
 import trekData from '../../data/treks.json';
 import { createClient } from '@supabase/supabase-js';
+import { createTrekCache, CACHE_DURATIONS } from './cache';
 
 export interface Trek {
   id: string;
@@ -209,8 +210,8 @@ async function getDynamicData(slug: string) {
   }
 }
 
-// Get featured treks (JSON + database dynamic data)
-export async function getFeaturedTreks(): Promise<Trek[]> {
+// Internal function for featured treks (will be cached)
+async function _getFeaturedTreks(): Promise<Trek[]> {
   try {
     const supabase = createSupabaseClient();
     
@@ -227,39 +228,70 @@ export async function getFeaturedTreks(): Promise<Trek[]> {
       return [];
     }
 
+    if (!featuredTreksData || featuredTreksData.length === 0) {
+      return [];
+    }
+
+    // OPTIMIZATION: Batch fetch all gallery images for featured treks in one query
+    const trekIds = featuredTreksData.map(trek => trek.id);
+    const { data: allGalleryImages } = await supabase
+      .from('trek_images')
+      .select('*')
+      .in('trek_id', trekIds)
+      .order('trek_id')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true });
+
+    // OPTIMIZATION: Batch fetch all slots for featured treks in one query
+    const trekSlugs = featuredTreksData.map(trek => trek.slug);
+    const { data: allSlots } = await supabase
+      .from('trek_slots')
+      .select('*')
+      .in('trek_slug', trekSlugs)
+      .order('trek_slug')
+      .order('date');
+
+    // Group gallery images and slots by trek
+    const galleryByTrekId = new Map<string, any[]>();
+    const slotsByTrekSlug = new Map<string, any[]>();
+
+    allGalleryImages?.forEach(img => {
+      if (!galleryByTrekId.has(img.trek_id)) {
+        galleryByTrekId.set(img.trek_id, []);
+      }
+      galleryByTrekId.get(img.trek_id)!.push({
+        id: img.id,
+        url: img.image_url,
+        alt: img.alt_text,
+        caption: img.caption,
+        is_featured: img.is_featured
+      });
+    });
+
+    allSlots?.forEach(slot => {
+      if (!slotsByTrekSlug.has(slot.trek_slug)) {
+        slotsByTrekSlug.set(slot.trek_slug, []);
+      }
+      slotsByTrekSlug.get(slot.trek_slug)!.push(slot);
+    });
+
     // Combine with JSON data
     const featuredTreks: Trek[] = [];
     const jsonTreks = (trekData as TrekList).treks;
 
-    for (const trekData of featuredTreksData || []) {
-      const jsonTrek = jsonTreks.find(t => t.slug === trekData.slug);
+    for (const dbTrek of featuredTreksData) {
+      const jsonTrek = jsonTreks.find(t => t.slug === dbTrek.slug);
       if (jsonTrek) {
-        // Get gallery images for this trek
-        const { data: galleryImages } = await supabase
-          .from('trek_images')
-          .select('*')
-          .eq('trek_id', trekData.id)
-          .order('sort_order', { ascending: true })
-          .order('created_at', { ascending: true });
-
-        const gallery = galleryImages?.map(img => ({
-          id: img.id,
-          url: img.image_url,
-          alt: img.alt_text,
-          caption: img.caption,
-          is_featured: img.is_featured
-        })) || [];
-
         featuredTreks.push({
           ...jsonTrek,
           // Dynamic fields from database only
-          price: trekData.price,
-          rating: trekData.rating,
-          image: trekData.image,
-          status: trekData.status,
-          featured: trekData.featured,
-          slots: trekData.slots || [],
-          gallery: gallery
+          price: dbTrek.price,
+          rating: dbTrek.rating,
+          image: dbTrek.image,
+          status: dbTrek.status,
+          featured: dbTrek.featured,
+          slots: slotsByTrekSlug.get(dbTrek.slug) || [],
+          gallery: galleryByTrekId.get(dbTrek.id) || []
         });
       }
     }
@@ -271,8 +303,15 @@ export async function getFeaturedTreks(): Promise<Trek[]> {
   }
 }
 
-// Get all treks (JSON + database dynamic data)
-export async function getAllTreks(): Promise<Trek[]> {
+// Cached version of getFeaturedTreks
+export const getFeaturedTreks = createTrekCache(
+  _getFeaturedTreks,
+  'featured-treks',
+  CACHE_DURATIONS.MEDIUM
+);
+
+// Internal function for all treks (will be cached)
+async function _getAllTreks(): Promise<Trek[]> {
   try {
     const supabase = createSupabaseClient();
     
@@ -289,35 +328,63 @@ export async function getAllTreks(): Promise<Trek[]> {
       return (trekData as TrekList).treks;
     }
 
+    if (!dbTreks || dbTreks.length === 0) {
+      return (trekData as TrekList).treks;
+    }
+
+    // OPTIMIZATION: Batch fetch all related data in parallel
+    const trekIds = dbTreks.map(trek => trek.id);
+    const trekSlugs = dbTreks.map(trek => trek.slug);
+
+    const [galleryResult, slotsResult] = await Promise.all([
+      // Batch fetch all gallery images
+      supabase
+        .from('trek_images')
+        .select('*')
+        .in('trek_id', trekIds)
+        .order('trek_id')
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true }),
+      
+      // Batch fetch all slots
+      supabase
+        .from('trek_slots')
+        .select('*')
+        .in('trek_slug', trekSlugs)
+        .order('trek_slug')
+        .order('date')
+    ]);
+
+    // Group data by trek
+    const galleryByTrekId = new Map<string, any[]>();
+    const slotsByTrekSlug = new Map<string, any[]>();
+
+    galleryResult.data?.forEach(img => {
+      if (!galleryByTrekId.has(img.trek_id)) {
+        galleryByTrekId.set(img.trek_id, []);
+      }
+      galleryByTrekId.get(img.trek_id)!.push({
+        id: img.id,
+        url: img.image_url,
+        alt: img.alt_text,
+        caption: img.caption,
+        is_featured: img.is_featured
+      });
+    });
+
+    slotsResult.data?.forEach(slot => {
+      if (!slotsByTrekSlug.has(slot.trek_slug)) {
+        slotsByTrekSlug.set(slot.trek_slug, []);
+      }
+      slotsByTrekSlug.get(slot.trek_slug)!.push(slot);
+    });
+
     const jsonTreks = (trekData as TrekList).treks;
     const treksWithDynamicData: Trek[] = [];
 
-    for (const dbTrek of dbTreks || []) {
+    for (const dbTrek of dbTreks) {
       const jsonTrek = jsonTreks.find(t => t.slug === dbTrek.slug);
       if (jsonTrek) {
-        // Get slots for this trek
-        const { data: slots } = await supabase
-          .from('trek_slots')
-          .select('*')
-          .eq('trek_slug', dbTrek.slug)
-          .order('date');
-
-        // Get gallery images for this trek
-        const { data: galleryImages } = await supabase
-          .from('trek_images')
-          .select('*')
-          .eq('trek_id', dbTrek.id)
-          .order('sort_order', { ascending: true })
-          .order('created_at', { ascending: true });
-
-        const gallery = galleryImages?.map(img => ({
-          id: img.id,
-          url: img.image_url,
-          alt: img.alt_text,
-          caption: img.caption,
-          is_featured: img.is_featured
-        })) || [];
-
         treksWithDynamicData.push({
           ...jsonTrek,
           // Dynamic fields from database only
@@ -326,8 +393,8 @@ export async function getAllTreks(): Promise<Trek[]> {
           image: dbTrek.image,
           status: dbTrek.status,
           featured: dbTrek.featured,
-          slots: slots || [],
-          gallery: gallery
+          slots: slotsByTrekSlug.get(dbTrek.slug) || [],
+          gallery: galleryByTrekId.get(dbTrek.id) || []
         });
       }
     }
@@ -340,8 +407,15 @@ export async function getAllTreks(): Promise<Trek[]> {
   }
 }
 
-// Get trek by slug (JSON + database dynamic data)
-export async function getTrekBySlug(slug: string): Promise<Trek | null> {
+// Cached version of getAllTreks
+export const getAllTreks = createTrekCache(
+  _getAllTreks,
+  'all-treks',
+  CACHE_DURATIONS.MEDIUM
+);
+
+// Internal function for getting trek by slug (will be cached)
+async function _getTrekBySlug(slug: string): Promise<Trek | null> {
   try {
     const supabase = createSupabaseClient();
     
@@ -370,22 +444,23 @@ export async function getTrekBySlug(slug: string): Promise<Trek | null> {
     
     if (!jsonTrek) return null;
 
-    // Get slots for this trek
-    const { data: slots } = await supabase
-      .from('trek_slots')
-      .select('*')
-      .eq('trek_slug', slug)
-      .order('date');
+    // OPTIMIZATION: Fetch slots and gallery in parallel
+    const [slotsResult, galleryResult] = await Promise.all([
+      supabase
+        .from('trek_slots')
+        .select('*')
+        .eq('trek_slug', slug)
+        .order('date'),
+      
+      supabase
+        .from('trek_images')
+        .select('*')
+        .eq('trek_id', dbTrek.id)
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true })
+    ]);
 
-    // Get gallery images for this trek
-    const { data: galleryImages } = await supabase
-      .from('trek_images')
-      .select('*')
-      .eq('trek_id', dbTrek.id)
-      .order('sort_order', { ascending: true })
-      .order('created_at', { ascending: true });
-
-    const gallery = galleryImages?.map(img => ({
+    const gallery = galleryResult.data?.map(img => ({
       id: img.id,
       url: img.image_url,
       alt: img.alt_text,
@@ -402,7 +477,7 @@ export async function getTrekBySlug(slug: string): Promise<Trek | null> {
       image: dbTrek.image,
       status: dbTrek.status,
       featured: dbTrek.featured,
-      slots: slots || [], // Dynamic: available slots
+      slots: slotsResult.data || [], // Dynamic: available slots
       gallery: gallery // Dynamic: gallery images
     };
   } catch (error) {
@@ -412,6 +487,13 @@ export async function getTrekBySlug(slug: string): Promise<Trek | null> {
     return jsonTreks.find(t => t.slug === slug) || null;
   }
 }
+
+// Cached version of getTrekBySlug
+export const getTrekBySlug = createTrekCache(
+  _getTrekBySlug,
+  'trek-by-slug',
+  CACHE_DURATIONS.MEDIUM
+);
 
 // Get treks by region
 export async function getTreksByRegion(region: string): Promise<Trek[]> {

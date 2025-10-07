@@ -27,10 +27,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       title: `Book ${trek.name} | Trek Hub India`,
       description: `Book your adventure for ${trek.name}. Submit your booking request for admin approval.`,
       type: 'website',
-      url: `https://trekhubindia.com/book/${trek.slug}`,
+      url: `https://nomadictravels.shop/book/${trek.slug}`,
     },
     alternates: {
-      canonical: `https://trekhubindia.com/book/${trek.slug}`,
+      canonical: `https://nomadictravels.shop/book/${trek.slug}`,
     },
   };
 }

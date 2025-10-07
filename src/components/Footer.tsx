@@ -92,7 +92,7 @@ export default function Footer() {
               <div className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-black dark:text-white flex-shrink-0" />
                 <div className="text-gray-600 dark:text-gray-300">
-                  <p className="font-medium">info@trekhubindia.com</p>
+                  <p className="font-medium">info@nomadictravels.shop</p>
                   <p className="text-sm">We reply within 24 hours</p>
                 </div>
               </div>
@@ -136,21 +136,21 @@ export default function Footer() {
             {/* Social Links */}
             <div className="flex items-center gap-4">
               <Link 
-                href="https://facebook.com/trekhubindia" 
+                href="https://facebook.com/nomadictravels" 
                 target="_blank"
                 className="w-10 h-10 bg-gray-200 dark:bg-gray-800 hover:bg-black dark:hover:bg-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 group"
               >
                 <Facebook className="w-5 h-5 text-black dark:text-white group-hover:text-white dark:group-hover:text-black" />
               </Link>
               <Link 
-                href="https://instagram.com/trekhubindia" 
+                href="https://instagram.com/nomadictravels" 
                 target="_blank"
                 className="w-10 h-10 bg-gray-200 dark:bg-gray-800 hover:bg-black dark:hover:bg-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 group"
               >
                 <Instagram className="w-5 h-5 text-black dark:text-white group-hover:text-white dark:group-hover:text-black" />
               </Link>
               <Link 
-                href="https://twitter.com/trekhubindia" 
+                href="https://twitter.com/nomadictravels" 
                 target="_blank"
                 className="w-10 h-10 bg-gray-200 dark:bg-gray-800 hover:bg-black dark:hover:bg-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 group"
               >

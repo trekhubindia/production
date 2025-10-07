@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: 'About Trek Hub India - Professional Himalayan Trekking Company',
     description: 'Learn about our 14+ year journey in providing world-class Himalayan trekking experiences with safety, sustainability, and authenticity at our core.',
     type: 'website',
-    url: 'https://trekhubindia.com/about',
+    url: 'https://nomadictravels.shop/about',
   },
 };
 

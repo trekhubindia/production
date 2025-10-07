@@ -130,7 +130,7 @@ export default function TermsOfServicePage() {
               <p className="text-foreground mb-2"><strong>Trek Hub India</strong></p>
               <p className="text-foreground/80 mb-2">Adventure Hub, Tapovan, Rishikesh</p>
               <p className="text-foreground/80 mb-2">Uttarakhand 249192, India</p>
-              <p className="text-foreground/80 mb-2">Email: legal@trekhubindia.com</p>
+              <p className="text-foreground/80 mb-2">Email: legal@nomadictravels.shop</p>
               <p className="text-foreground/80">Phone: +91 98765 43210</p>
             </div>
           </section>

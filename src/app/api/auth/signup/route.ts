@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send activation email
-    const activationUrl = `https://trekhubindia.com/auth/activate?token=${activationData.activation_token}`;
+    const activationUrl = `https://nomadictravels.shop/auth/activate?token=${activationData.activation_token}`;
     await emailService.sendActivationEmail(email, activationUrl, name);
 
     // Get complete user data

@@ -4,6 +4,9 @@ import './globals.css';
 import '@/styles/smooth-animations.css';
 import Providers from '@/components/Providers';
 import ClientLayout from '@/components/ClientLayout';
+import PerformanceMonitor from '@/components/PerformanceMonitor';
+import GoogleAnalytics from '@/components/GoogleAnalytics';
+import GADebugger from '@/components/GADebugger';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,7 +25,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://trekhubindia.com'),
+  metadataBase: new URL('https://nomadictravels.shop'),
   icons: {
     apple: [
       { url: '/images/logo.png', sizes: '180x180' },
@@ -31,7 +34,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Trek Hub India | Himalayan Trekking Tours in India',
     description: 'Explore Himalayan treks in India with certified guides. Book Kedarkantha, Valley of Flowers, Hampta Pass, Brahmatal and more. Safety-first, small-group adventures.',
-    url: 'https://trekhubindia.com',
+    url: 'https://nomadictravels.shop',
     siteName: 'Trek Hub India',
     images: [
       {
@@ -79,15 +82,26 @@ export default function RootLayout({
         <meta name="geo.position" content="30.3752;78.0322" />
         <meta name="ICBM" content="30.3752, 78.0322" />
         
-        {/* Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-582SPBJ9HH"></script>
+        {/* Google Analytics - Enhanced Implementation */}
+        <script 
+          async 
+          src="https://www.googletagmanager.com/gtag/js?id=G-582SPBJ9HH"
+        ></script>
         <script
+          id="google-analytics"
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', 'G-582SPBJ9HH');
+              gtag('config', 'G-582SPBJ9HH', {
+                page_title: document.title,
+                page_location: window.location.href,
+                send_page_view: true,
+                cookie_domain: 'nomadictravels.shop',
+                cookie_flags: 'SameSite=None;Secure'
+              });
+              console.log('Google Analytics initialized with ID: G-582SPBJ9HH');
             `,
           }}
         />
@@ -101,9 +115,9 @@ export default function RootLayout({
               "@type": "TravelAgency",
               "name": "Trek Hub India",
               "description": "Himalayan trekking adventures with expert guides",
-              "url": "https://trekhubindia.com",
-              "logo": "https://trekhubindia.com/images/logo.png",
-              "image": "https://trekhubindia.com/images/logo.png",
+              "url": "https://nomadictravels.shop",
+              "logo": "https://nomadictravels.shop/images/logo.png",
+              "image": "https://nomadictravels.shop/images/logo.png",
               "address": {
                 "@type": "PostalAddress",
                 "addressCountry": "IN",
@@ -116,9 +130,9 @@ export default function RootLayout({
                 "availableLanguage": "English"
               },
               "sameAs": [
-                "https://facebook.com/trekhubindia",
-                "https://instagram.com/trekhubindia",
-                "https://twitter.com/trekhubindia"
+                "https://facebook.com/nomadictravels",
+                "https://instagram.com/nomadictravels",
+                "https://twitter.com/nomadictravels"
               ],
               "hasOfferCatalog": {
                 "@type": "OfferCatalog",
@@ -151,6 +165,9 @@ export default function RootLayout({
           <ClientLayout>
             {children}
           </ClientLayout>
+          <GoogleAnalytics />
+          <PerformanceMonitor />
+          <GADebugger />
         </Providers>
       </body>
     </html>
