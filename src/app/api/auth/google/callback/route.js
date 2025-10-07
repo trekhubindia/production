@@ -64,17 +64,34 @@ export async function GET(request) {
   let userInfo;
   try {
     userInfo = await fetchUserInfo(config, tokenSet.access_token, expectedSubject);
+    console.log('✅ User info fetched successfully:', {
+      email: userInfo.email,
+      name: userInfo.name,
+      picture: userInfo.picture,
+      sub: userInfo.sub
+    });
   } catch (err) {
-    console.error('User info fetch error:', err);
+    console.error('❌ User info fetch error:', err);
     return NextResponse.redirect(`${BASE_URL}/auth?error=userinfo_failed`);
   }
 
   // Check if user exists and provider matches
-  const { data: existingUser } = await supabaseAdmin
+  console.log('🔍 Checking for existing user with email:', userInfo.email);
+  const { data: existingUser, error: existingUserError } = await supabaseAdmin
     .from('auth_user')
     .select('id, provider')
     .eq('email', userInfo.email)
     .single();
+
+  if (existingUserError && existingUserError.code !== 'PGRST116') {
+    console.error('❌ Error checking existing user:', existingUserError);
+  }
+
+  console.log('👤 Existing user check result:', {
+    found: !!existingUser,
+    existingUser,
+    error: existingUserError?.code
+  });
 
   let userId = existingUser?.id || randomUUID();
 
@@ -90,36 +107,150 @@ export async function GET(request) {
     return NextResponse.redirect(`${BASE_URL}/auth?error=registered_with_different_method`);
   }
 
-  // Generate activation token before using it
-  const activationToken = randomUUID();
+  console.log('💾 Attempting to upsert Google OAuth user with data:', {
+    id: userId,
+    email: userInfo.email,
+    provider: 'google',
+  });
 
-
-  // Upsert user into auth_user with provider: 'google' (no username)
+  // Step 1: Upsert user into auth_user table (basic auth info)
+  // Your auth_user table has: id, email, provider, created_at, updated_at
   const { data: user, error: userError } = await supabaseAdmin
     .from('auth_user')
     .upsert({
       id: userId,
       email: userInfo.email,
-      name: userInfo.name || userInfo.email,
-      avatar_url: userInfo.picture || null,
       provider: 'google',
-      is_activated: true,
-      activation_token: activationToken,
     }, { onConflict: 'email' })
     .select()
     .single();
 
+  console.log('💾 Upsert result:', {
+    success: !!user,
+    user: user ? { id: user.id, email: user.email, provider: user.provider } : null,
+    error: userError
+  });
+
   if (userError || !user) {
-    console.error('User upsert error:', userError);
-    return NextResponse.redirect(`${BASE_URL}/auth?error=user_upsert_failed`);
+    console.error('❌ User upsert error:', userError);
+    console.error('❌ Full error details:', JSON.stringify(userError, null, 2));
+    return NextResponse.redirect(`${BASE_URL}/auth?error=user_upsert_failed&details=${encodeURIComponent(userError?.message || 'Unknown error')}`);
+  }
+
+  console.log('✅ User successfully created/updated:', {
+    id: user.id,
+    email: user.email,
+    provider: user.provider
+  });
+
+  // Step 2: Create/update user profile in user_profiles table
+  console.log('👤 Creating/updating user profile...');
+  const { data: existingProfile } = await supabaseAdmin
+    .from('user_profiles')
+    .select('id')
+    .eq('user_id', user.id)
+    .single();
+
+  if (!existingProfile) {
+    // Create new profile for OAuth user
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('user_profiles')
+      .insert({
+        user_id: user.id,
+        name: userInfo.name || userInfo.email.split('@')[0], // Use name or email prefix
+        avatar_url: userInfo.picture || null,
+        // Add any other profile fields your table has
+      })
+      .select()
+      .single();
+
+    if (profileError) {
+      console.error('⚠️  Error creating user profile:', profileError);
+      // Don't fail the OAuth flow for profile creation issues
+    } else {
+      console.log('✅ User profile created:', { user_id: user.id, name: profile.name });
+    }
+  } else {
+    // Update existing profile with Google data
+    const { error: updateProfileError } = await supabaseAdmin
+      .from('user_profiles')
+      .update({
+        name: userInfo.name || userInfo.email.split('@')[0],
+        avatar_url: userInfo.picture || null,
+      })
+      .eq('user_id', user.id);
+
+    if (updateProfileError) {
+      console.error('⚠️  Error updating user profile:', updateProfileError);
+    } else {
+      console.log('✅ User profile updated:', { user_id: user.id });
+    }
+  }
+
+  // Handle user activation for OAuth users (since Google has verified their email)
+  console.log('🔓 Setting up user activation for OAuth user...');
+  const { data: existingActivation, error: activationCheckError } = await supabaseAdmin
+    .from('user_activation')
+    .select('id, is_activated')
+    .eq('user_id', user.id)
+    .single();
+
+  if (activationCheckError && activationCheckError.code !== 'PGRST116') {
+    console.error('⚠️  Error checking user activation:', activationCheckError);
+  }
+
+  if (!existingActivation) {
+    // Create activation record for new OAuth user
+    // Your schema has: id, user_id, activation_token, is_activated, activated_at, expires_at, created_at, updated_at
+    const { data: activation, error: activationError } = await supabaseAdmin
+      .from('user_activation')
+      .insert({
+        user_id: user.id,
+        activation_token: randomUUID(), // Generate token for consistency
+        is_activated: true, // OAuth users are pre-activated
+        activated_at: new Date().toISOString(),
+        expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year from now
+      })
+      .select()
+      .single();
+
+    if (activationError) {
+      console.error('❌ Error creating user activation:', activationError);
+    } else {
+      console.log('✅ User activation created:', { user_id: user.id, is_activated: true });
+    }
+  } else if (!existingActivation.is_activated) {
+    // Update existing activation to true for OAuth login
+    const { error: updateActivationError } = await supabaseAdmin
+      .from('user_activation')
+      .update({
+        is_activated: true,
+        activated_at: new Date().toISOString(),
+      })
+      .eq('user_id', user.id);
+
+    if (updateActivationError) {
+      console.error('❌ Error updating user activation:', updateActivationError);
+    } else {
+      console.log('✅ User activation updated:', { user_id: user.id, is_activated: true });
+    }
+  } else {
+    console.log('✅ User already activated:', { user_id: user.id, is_activated: true });
   }
 
   // Check if user already has a session
-  const { data: existingSession } = await supabaseAdmin
+  console.log('🔍 Checking for existing session for user:', user.id);
+  const { data: existingSession, error: sessionCheckError } = await supabaseAdmin
     .from('user_session')
     .select('id, activity_log')
     .eq('user_id', user.id)
     .single();
+
+  console.log('📋 Session check result:', {
+    found: !!existingSession,
+    sessionId: existingSession?.id,
+    error: sessionCheckError?.code
+  });
 
   let sessionId;
   const newActivity = {
