@@ -27,6 +27,15 @@ yarn-error.log*
 .env*.local
 .env.production
 .env.development
+.env.local.development
+
+# Service account keys and credentials
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!next-sitemap.config.js
+sharp-arcanum-*.json
 
 # Vercel
 .vercel
