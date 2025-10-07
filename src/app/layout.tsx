@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import '@/styles/smooth-animations.css';
+import '@/styles/mobile-optimizations.css';
 import Providers from '@/components/Providers';
 import ClientLayout from '@/components/ClientLayout';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
@@ -15,6 +16,11 @@ export const metadata: Metadata = {
   },
   description: 'Explore Himalayan treks in India with certified guides. Book Kedarkantha, Valley of Flowers, Hampta Pass, Brahmatal and more. Safety-first, small-group adventures.',
   keywords: 'himalayan trekking, trekking in india, adventure tours, mountain trekking, kedarkantha trek, valley of flowers trek, hampta pass trek, brahmatal trek, auden col expedition, annapurna base camp, trekking safety, altitude sickness, trekking gear, winter trekking, summer trekking, himalayan adventure, mountain climbing, trekking company, best trekking tours, safe trekking, expert guides',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+  },
   authors: [{ name: 'Trek Hub India Team' }],
   creator: 'Trek Hub India',
   publisher: 'Trek Hub India',

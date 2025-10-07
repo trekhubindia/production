@@ -164,11 +164,10 @@ export default function OptimizedHeroSlider() {
       {/* Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 z-10" />
 
-      {/* Content */}
+      {/* Content Overlay */}
       <div className="absolute inset-0 z-20 flex items-center">
-        <div className="max-w-7xl mx-auto px-4 sm:px-5 w-full">
-          <div className="max-w-3xl">
-            {/* Optimized Text Content */}
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl">
             <div 
               className="transform transition-all duration-700 ease-out"
               style={{ willChange: 'transform, opacity' }}
@@ -179,11 +178,11 @@ export default function OptimizedHeroSlider() {
                 </span>
               </div>
               
-              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-8xl font-bold text-white mb-4 sm:mb-6 leading-tight tracking-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-3 sm:mb-4 md:mb-6 leading-tight tracking-tight">
                 {currentSlideData.title}
               </h1>
               
-              <p className="text-base sm:text-lg md:text-xl text-white/90 mb-6 sm:mb-8 leading-relaxed max-w-2xl">
+              <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/90 mb-4 sm:mb-6 md:mb-8 leading-relaxed max-w-xl md:max-w-2xl">
                 {currentSlideData.description}
               </p>
 

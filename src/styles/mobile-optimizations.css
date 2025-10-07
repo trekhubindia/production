@@ -1,0 +1,313 @@
+/* Mobile Optimizations for Trek Hub India */
+
+/* Base mobile improvements */
+@media (max-width: 768px) {
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Improve touch targets */
+  button, 
+  a, 
+  input, 
+  select, 
+  textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Better text sizing for mobile */
+  html {
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+  
+  /* Improve form elements on mobile */
+  input, 
+  select, 
+  textarea {
+    font-size: 16px; /* Prevents zoom on iOS */
+    border-radius: 8px;
+    padding: 12px 16px;
+  }
+  
+  /* Better spacing for mobile */
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  /* Mobile-friendly hero section */
+  .hero-slider {
+    height: 100vh;
+    min-height: 600px;
+  }
+  
+  /* Optimize text for mobile reading */
+  h1 {
+    font-size: clamp(1.75rem, 5vw, 3rem);
+    line-height: 1.2;
+    margin-bottom: 1rem;
+  }
+  
+  h2 {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    line-height: 1.3;
+    margin-bottom: 0.875rem;
+  }
+  
+  h3 {
+    font-size: clamp(1.25rem, 3.5vw, 2rem);
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+  }
+  
+  p {
+    font-size: clamp(0.875rem, 2.5vw, 1rem);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+  
+  /* Better button sizing for mobile */
+  .btn, 
+  button {
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 8px;
+    min-height: 48px;
+  }
+  
+  /* Mobile-friendly cards */
+  .card {
+    margin-bottom: 16px;
+    border-radius: 12px;
+    padding: 20px 16px;
+  }
+  
+  /* Improve image responsiveness */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Better spacing for sections */
+  section {
+    padding: 40px 0;
+  }
+  
+  /* Mobile navigation improvements */
+  .mobile-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(10px);
+  }
+  
+  /* Optimize grid layouts for mobile */
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 480px) {
+  /* Even smaller text for very small screens */
+  h1 {
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+  }
+  
+  h2 {
+    font-size: clamp(1.25rem, 5vw, 2rem);
+  }
+  
+  h3 {
+    font-size: clamp(1.125rem, 4vw, 1.75rem);
+  }
+  
+  /* Tighter spacing */
+  .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  
+  section {
+    padding: 32px 0;
+  }
+  
+  .card {
+    padding: 16px 12px;
+  }
+  
+  /* Single column for all grids */
+  .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Tablet-specific optimizations */
+  .grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .grid-cols-4 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  h1 {
+    font-size: clamp(2rem, 4vw, 3.5rem);
+  }
+  
+  h2 {
+    font-size: clamp(1.75rem, 3.5vw, 3rem);
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  .hover\:scale-105:hover {
+    transform: none;
+  }
+  
+  .hover\:shadow-xl:hover {
+    box-shadow: none;
+  }
+  
+  /* Better touch feedback */
+  button:active,
+  a:active {
+    transform: scale(0.98);
+    opacity: 0.8;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Optimize for retina displays */
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 768px) and (orientation: landscape) {
+  .hero-slider {
+    height: 100vh;
+    min-height: 500px;
+  }
+  
+  /* Adjust hero content for landscape */
+  .hero-slider h1 {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+  }
+  
+  .hero-slider p {
+    font-size: clamp(0.875rem, 2vw, 1rem);
+  }
+}
+
+/* Accessibility improvements for mobile */
+@media (max-width: 768px) {
+  /* Better focus indicators */
+  *:focus {
+    outline: 2px solid #00e676;
+    outline-offset: 2px;
+  }
+  
+  /* Improve readability */
+  .text-sm {
+    font-size: 0.875rem;
+  }
+  
+  .text-xs {
+    font-size: 0.75rem;
+  }
+  
+  /* Better contrast for mobile */
+  .text-gray-600 {
+    color: #4b5563;
+  }
+  
+  .text-gray-500 {
+    color: #6b7280;
+  }
+}
+
+/* Performance optimizations for mobile */
+@media (max-width: 768px) {
+  /* Reduce motion for better performance */
+  * {
+    animation-duration: 0.3s !important;
+    transition-duration: 0.3s !important;
+  }
+  
+  /* Optimize transforms */
+  .transform {
+    will-change: transform;
+  }
+  
+  /* Reduce blur effects on mobile */
+  .backdrop-blur-sm {
+    backdrop-filter: blur(2px);
+  }
+  
+  .backdrop-blur {
+    backdrop-filter: blur(4px);
+  }
+}
+
+/* Fix common mobile layout issues */
+@media (max-width: 768px) {
+  /* Prevent text overflow */
+  .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Better flex layouts */
+  .flex-wrap {
+    flex-wrap: wrap;
+  }
+  
+  .flex-col {
+    flex-direction: column;
+  }
+  
+  /* Improve spacing */
+  .space-y-4 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-y-6 > * + * {
+    margin-top: 1.5rem;
+  }
+  
+  /* Better margins */
+  .mx-auto {
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
