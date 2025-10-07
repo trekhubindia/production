@@ -143,37 +143,120 @@ export class AdminAnalyticsService {
   }
 
   /**
-   * Get basic business metrics
+   * Get basic business metrics from real database
    */
   private static async getBasicMetrics(): Promise<AdminMetrics> {
-    // Mock data - replace with actual database queries
-    const metrics: AdminMetrics = {
-      total_bookings: 1247,
-      total_revenue: 2847500, // in cents
-      active_users: 892,
-      pending_approvals: 23,
-      conversion_rate: 12.5,
-      average_booking_value: 2285,
-      top_destinations: [
-        { name: 'Kedarkantha Trek', bookings: 156 },
-        { name: 'Valley of Flowers', bookings: 134 },
-        { name: 'Hampta Pass', bookings: 98 },
-        { name: 'Roopkund Trek', bookings: 87 },
-        { name: 'Chopta Trek', bookings: 76 }
-      ],
-      monthly_trends: [
-        { month: 'Jan', bookings: 89, revenue: 203450 },
-        { month: 'Feb', bookings: 102, revenue: 234100 },
-        { month: 'Mar', bookings: 156, revenue: 356800 },
-        { month: 'Apr', bookings: 134, revenue: 298900 },
-        { month: 'May', bookings: 167, revenue: 381200 },
-        { month: 'Jun', bookings: 189, revenue: 432100 },
-        { month: 'Jul', bookings: 201, revenue: 458900 },
-        { month: 'Aug', bookings: 189, revenue: 431200 }
-      ]
-    };
+    try {
+      // Get total bookings
+      const { count: totalBookings } = await supabaseAdmin
+        .from('bookings')
+        .select('*', { count: 'exact', head: true });
 
-    return metrics;
+      // Get total revenue
+      const { data: revenueData } = await supabaseAdmin
+        .from('bookings')
+        .select('total_amount')
+        .eq('status', 'confirmed');
+      
+      const totalRevenue = revenueData?.reduce((sum, booking) => sum + (booking.total_amount || 0), 0) || 0;
+
+      // Get active users (users who logged in within last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const { count: activeUsers } = await supabaseAdmin
+        .from('users')
+        .select('*', { count: 'exact', head: true })
+        .gte('last_login', thirtyDaysAgo.toISOString());
+
+      // Get pending approvals
+      const { count: pendingApprovals } = await supabaseAdmin
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      // Calculate average booking value
+      const averageBookingValue = totalBookings > 0 ? Math.round(totalRevenue / totalBookings) : 0;
+
+      // Get top destinations
+      const { data: topDestinationsData } = await supabaseAdmin
+        .from('bookings')
+        .select('trek_name')
+        .eq('status', 'confirmed');
+
+      const destinationCounts = topDestinationsData?.reduce((acc: any, booking) => {
+        const trekName = booking.trek_name || 'Unknown Trek';
+        acc[trekName] = (acc[trekName] || 0) + 1;
+        return acc;
+      }, {}) || {};
+
+      const topDestinations = Object.entries(destinationCounts)
+        .map(([name, bookings]) => ({ name, bookings: bookings as number }))
+        .sort((a, b) => b.bookings - a.bookings)
+        .slice(0, 5);
+
+      // Get monthly trends for the last 8 months
+      const monthlyTrends = [];
+      for (let i = 7; i >= 0; i--) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1);
+        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+        const { count: monthlyBookings } = await supabaseAdmin
+          .from('bookings')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', monthStart.toISOString())
+          .lte('created_at', monthEnd.toISOString());
+
+        const { data: monthlyRevenueData } = await supabaseAdmin
+          .from('bookings')
+          .select('total_amount')
+          .eq('status', 'confirmed')
+          .gte('created_at', monthStart.toISOString())
+          .lte('created_at', monthEnd.toISOString());
+
+        const monthlyRevenue = monthlyRevenueData?.reduce((sum, booking) => sum + (booking.total_amount || 0), 0) || 0;
+
+        monthlyTrends.push({
+          month: date.toLocaleDateString('en-US', { month: 'short' }),
+          bookings: monthlyBookings || 0,
+          revenue: monthlyRevenue
+        });
+      }
+
+      // Calculate conversion rate (confirmed bookings / total bookings)
+      const { count: confirmedBookings } = await supabaseAdmin
+        .from('bookings')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'confirmed');
+
+      const conversionRate = totalBookings > 0 ? ((confirmedBookings || 0) / totalBookings) * 100 : 0;
+
+      return {
+        total_bookings: totalBookings || 0,
+        total_revenue: totalRevenue,
+        active_users: activeUsers || 0,
+        pending_approvals: pendingApprovals || 0,
+        conversion_rate: Math.round(conversionRate * 100) / 100,
+        average_booking_value: averageBookingValue,
+        top_destinations: topDestinations,
+        monthly_trends: monthlyTrends
+      };
+    } catch (error) {
+      console.error('Error fetching real metrics:', error);
+      // Fallback to basic data if database queries fail
+      return {
+        total_bookings: 0,
+        total_revenue: 0,
+        active_users: 0,
+        pending_approvals: 0,
+        conversion_rate: 0,
+        average_booking_value: 0,
+        top_destinations: [],
+        monthly_trends: []
+      };
+    }
   }
 
   /**

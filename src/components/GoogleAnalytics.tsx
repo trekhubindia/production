@@ -19,19 +19,31 @@ export default function GoogleAnalytics() {
         }
         window.gtag = gtag;
 
-        // Configure Google Analytics
+        // Configure Google Analytics with proper settings
         gtag('js', new Date());
         gtag('config', GA_TRACKING_ID, {
           page_title: document.title,
           page_location: window.location.href,
           send_page_view: true,
-          cookie_domain: 'auto',
-          cookie_flags: 'SameSite=None;Secure'
+          cookie_domain: window.location.hostname.includes('localhost') ? 'none' : 'auto',
+          cookie_flags: 'SameSite=Lax;Secure',
+          // Enhanced measurement
+          enhanced_measurement: true,
+          // Debug mode in development
+          debug_mode: process.env.NODE_ENV === 'development'
+        });
+
+        // Send initial page view
+        gtag('event', 'page_view', {
+          page_title: document.title,
+          page_location: window.location.href,
+          page_path: window.location.pathname
         });
 
         console.log('✅ Google Analytics initialized:', GA_TRACKING_ID);
         console.log('📊 Current URL:', window.location.href);
         console.log('📄 Page Title:', document.title);
+        console.log('🍪 Cookie Domain:', window.location.hostname.includes('localhost') ? 'none' : 'auto');
       }
     };
 
@@ -40,15 +52,21 @@ export default function GoogleAnalytics() {
       const script = document.createElement('script');
       script.async = true;
       script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_TRACKING_ID}`;
-      script.onload = initGA;
+      script.onload = () => {
+        console.log('📥 Google Analytics script loaded successfully');
+        initGA();
+      };
       script.onerror = () => console.error('❌ Failed to load Google Analytics script');
       document.head.appendChild(script);
     };
 
     // Check if script is already loaded
-    if (!document.querySelector(`script[src*="gtag/js?id=${GA_TRACKING_ID}"]`)) {
+    const existingScript = document.querySelector(`script[src*="gtag/js?id=${GA_TRACKING_ID}"]`);
+    if (!existingScript) {
+      console.log('🚀 Loading Google Analytics script...');
       loadGA();
     } else {
+      console.log('♻️ Google Analytics script already loaded, initializing...');
       initGA();
     }
   }, []);

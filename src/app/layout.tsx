@@ -7,6 +7,7 @@ import ClientLayout from '@/components/ClientLayout';
 import PerformanceMonitor from '@/components/PerformanceMonitor';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
 import GADebugger from '@/components/GADebugger';
+import AnalyticsTestButton from '@/components/AnalyticsTestButton';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -82,29 +83,7 @@ export default function RootLayout({
         <meta name="geo.position" content="30.3752;78.0322" />
         <meta name="ICBM" content="30.3752, 78.0322" />
         
-        {/* Google Analytics - Enhanced Implementation */}
-        <script 
-          async 
-          src="https://www.googletagmanager.com/gtag/js?id=G-582SPBJ9HH"
-        ></script>
-        <script
-          id="google-analytics"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-582SPBJ9HH', {
-                page_title: document.title,
-                page_location: window.location.href,
-                send_page_view: true,
-                cookie_domain: 'nomadictravels.shop',
-                cookie_flags: 'SameSite=None;Secure'
-              });
-              console.log('Google Analytics initialized with ID: G-582SPBJ9HH');
-            `,
-          }}
-        />
+        {/* Google Analytics handled by GoogleAnalytics component */}
         
         {/* Structured Data */}
         <script

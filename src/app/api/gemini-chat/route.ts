@@ -6,8 +6,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Initialize Google AI with the new API key
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY as string);
 
-// Configure Edge Runtime for better performance
-export const runtime = 'edge';
+// Using Node.js runtime for compatibility with ISR
+// Edge runtime disabled to allow static generation on pages
 
 export async function POST(request: NextRequest) {
   try {

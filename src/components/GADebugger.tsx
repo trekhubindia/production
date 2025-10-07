@@ -18,25 +18,43 @@ export default function GADebugger() {
           setGaStatus('❌ GA Script Not Found');
         }
 
-        // Check if dataLayer exists
+        // Check if dataLayer exists and has data
         if (window.dataLayer && window.dataLayer.length > 0) {
-          setDataLayerStatus(`✅ DataLayer Active (${window.dataLayer.length} events)`);
+          const configEvents = window.dataLayer.filter((item: any) => 
+            Array.isArray(item) && item[0] === 'config'
+          );
+          const pageViewEvents = window.dataLayer.filter((item: any) => 
+            Array.isArray(item) && item[0] === 'event' && item[1] === 'page_view'
+          );
+          
+          setDataLayerStatus(`✅ DataLayer Active (${window.dataLayer.length} events, ${configEvents.length} config, ${pageViewEvents.length} pageviews)`);
         } else {
-          setDataLayerStatus('❌ DataLayer Not Found');
+          setDataLayerStatus('❌ DataLayer Not Found or Empty');
         }
 
-        // Check if gtag function exists
+        // Check if gtag function exists and test it
         if (window.gtag) {
           console.log('✅ gtag function available');
+          // Test gtag function
+          try {
+            window.gtag('event', 'debug_test', {
+              event_category: 'debug',
+              event_label: 'GA Debug Test',
+              debug_mode: true
+            });
+            console.log('✅ gtag test event sent successfully');
+          } catch (error) {
+            console.error('❌ gtag test failed:', error);
+          }
         } else {
           console.log('❌ gtag function not available');
         }
       }
     };
 
-    // Check immediately and then every 2 seconds
+    // Check immediately and then every 3 seconds
     checkGA();
-    const interval = setInterval(checkGA, 2000);
+    const interval = setInterval(checkGA, 3000);
 
     return () => clearInterval(interval);
   }, []);
