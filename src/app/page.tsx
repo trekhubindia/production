@@ -60,13 +60,9 @@ const About = dynamic(() => import('@/components/About'), {
   loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
 });
 
-const FloatingChatbot = dynamic(() => import('@/components/FloatingChatbot'), {
-  ssr: false // Client-side only
-});
+const FloatingChatbot = dynamic(() => import('@/components/FloatingChatbot'));
 
-const ShareButtons = dynamic(() => import('@/components/ShareButtons'), {
-  ssr: false // Client-side only
-});
+const ShareButtons = dynamic(() => import('@/components/ShareButtons'));
 
 import { getHomepageFAQs } from '@/lib/faq-api';
 import faqData from '@/lib/faq-data';

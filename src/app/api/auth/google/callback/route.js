@@ -9,7 +9,11 @@ export async function GET(request) {
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
   const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-  const REDIRECT_URI = `${BASE_URL}/api/auth/google/callback`;
+  
+  // Force localhost for development to avoid 0.0.0.0 issues
+  const REDIRECT_URI = BASE_URL?.includes('0.0.0.0') 
+    ? `http://localhost:3000/api/auth/google/callback`
+    : `${BASE_URL}/api/auth/google/callback`;
 
   // Parse code and state from query
   const { searchParams } = new URL(request.url);
@@ -31,17 +35,20 @@ export async function GET(request) {
     }
   );
 
+
   // Exchange code for tokens
   let tokenSet;
   try {
     tokenSet = await authorizationCodeGrant(
       config,
       new URL(request.url),
-      { expectedState: state }
+      { 
+        expectedState: state,
+        redirect_uri: REDIRECT_URI // Explicitly specify redirect_uri
+      }
     );
-    console.log('OAuth tokenSet:', tokenSet);
   } catch (err) {
-    console.error('Token exchange error:', err);
+    console.error('OAuth token exchange failed:', err.message);
     return NextResponse.redirect(`${BASE_URL}/auth?error=token_exchange_failed`);
   }
 
@@ -64,34 +71,17 @@ export async function GET(request) {
   let userInfo;
   try {
     userInfo = await fetchUserInfo(config, tokenSet.access_token, expectedSubject);
-    console.log('✅ User info fetched successfully:', {
-      email: userInfo.email,
-      name: userInfo.name,
-      picture: userInfo.picture,
-      sub: userInfo.sub
-    });
   } catch (err) {
-    console.error('❌ User info fetch error:', err);
+    console.error('User info fetch error:', err);
     return NextResponse.redirect(`${BASE_URL}/auth?error=userinfo_failed`);
   }
 
   // Check if user exists and provider matches
-  console.log('🔍 Checking for existing user with email:', userInfo.email);
   const { data: existingUser, error: existingUserError } = await supabaseAdmin
     .from('auth_user')
     .select('id, provider')
     .eq('email', userInfo.email)
     .single();
-
-  if (existingUserError && existingUserError.code !== 'PGRST116') {
-    console.error('❌ Error checking existing user:', existingUserError);
-  }
-
-  console.log('👤 Existing user check result:', {
-    found: !!existingUser,
-    existingUser,
-    error: existingUserError?.code
-  });
 
   let userId = existingUser?.id || randomUUID();
 
@@ -107,14 +97,7 @@ export async function GET(request) {
     return NextResponse.redirect(`${BASE_URL}/auth?error=registered_with_different_method`);
   }
 
-  console.log('💾 Attempting to upsert Google OAuth user with data:', {
-    id: userId,
-    email: userInfo.email,
-    provider: 'google',
-  });
-
   // Step 1: Upsert user into auth_user table (basic auth info)
-  // Your auth_user table has: id, email, provider, created_at, updated_at
   const { data: user, error: userError } = await supabaseAdmin
     .from('auth_user')
     .upsert({
@@ -125,26 +108,12 @@ export async function GET(request) {
     .select()
     .single();
 
-  console.log('💾 Upsert result:', {
-    success: !!user,
-    user: user ? { id: user.id, email: user.email, provider: user.provider } : null,
-    error: userError
-  });
-
   if (userError || !user) {
-    console.error('❌ User upsert error:', userError);
-    console.error('❌ Full error details:', JSON.stringify(userError, null, 2));
-    return NextResponse.redirect(`${BASE_URL}/auth?error=user_upsert_failed&details=${encodeURIComponent(userError?.message || 'Unknown error')}`);
+    console.error('User upsert error:', userError);
+    return NextResponse.redirect(`${BASE_URL}/auth?error=user_upsert_failed`);
   }
 
-  console.log('✅ User successfully created/updated:', {
-    id: user.id,
-    email: user.email,
-    provider: user.provider
-  });
-
   // Step 2: Create/update user profile in user_profiles table
-  console.log('👤 Creating/updating user profile...');
   const { data: existingProfile } = await supabaseAdmin
     .from('user_profiles')
     .select('id')
@@ -153,22 +122,16 @@ export async function GET(request) {
 
   if (!existingProfile) {
     // Create new profile for OAuth user
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { error: profileError } = await supabaseAdmin
       .from('user_profiles')
       .insert({
         user_id: user.id,
-        name: userInfo.name || userInfo.email.split('@')[0], // Use name or email prefix
+        name: userInfo.name || userInfo.email.split('@')[0],
         avatar_url: userInfo.picture || null,
-        // Add any other profile fields your table has
-      })
-      .select()
-      .single();
+      });
 
     if (profileError) {
-      console.error('⚠️  Error creating user profile:', profileError);
-      // Don't fail the OAuth flow for profile creation issues
-    } else {
-      console.log('✅ User profile created:', { user_id: user.id, name: profile.name });
+      console.error('Error creating user profile:', profileError);
     }
   } else {
     // Update existing profile with Google data
@@ -181,23 +144,16 @@ export async function GET(request) {
       .eq('user_id', user.id);
 
     if (updateProfileError) {
-      console.error('⚠️  Error updating user profile:', updateProfileError);
-    } else {
-      console.log('✅ User profile updated:', { user_id: user.id });
+      console.error('Error updating user profile:', updateProfileError);
     }
   }
 
   // Handle user activation for OAuth users (since Google has verified their email)
-  console.log('🔓 Setting up user activation for OAuth user...');
   const { data: existingActivation, error: activationCheckError } = await supabaseAdmin
     .from('user_activation')
     .select('id, is_activated')
     .eq('user_id', user.id)
     .single();
-
-  if (activationCheckError && activationCheckError.code !== 'PGRST116') {
-    console.error('⚠️  Error checking user activation:', activationCheckError);
-  }
 
   if (!existingActivation) {
     // Create activation record for new OAuth user
@@ -215,9 +171,7 @@ export async function GET(request) {
       .single();
 
     if (activationError) {
-      console.error('❌ Error creating user activation:', activationError);
-    } else {
-      console.log('✅ User activation created:', { user_id: user.id, is_activated: true });
+      console.error('Error creating user activation:', activationError);
     }
   } else if (!existingActivation.is_activated) {
     // Update existing activation to true for OAuth login
@@ -230,27 +184,16 @@ export async function GET(request) {
       .eq('user_id', user.id);
 
     if (updateActivationError) {
-      console.error('❌ Error updating user activation:', updateActivationError);
-    } else {
-      console.log('✅ User activation updated:', { user_id: user.id, is_activated: true });
+      console.error('Error updating user activation:', updateActivationError);
     }
-  } else {
-    console.log('✅ User already activated:', { user_id: user.id, is_activated: true });
   }
 
   // Check if user already has a session
-  console.log('🔍 Checking for existing session for user:', user.id);
   const { data: existingSession, error: sessionCheckError } = await supabaseAdmin
     .from('user_session')
     .select('id, activity_log')
     .eq('user_id', user.id)
     .single();
-
-  console.log('📋 Session check result:', {
-    found: !!existingSession,
-    sessionId: existingSession?.id,
-    error: sessionCheckError?.code
-  });
 
   let sessionId;
   const newActivity = {
