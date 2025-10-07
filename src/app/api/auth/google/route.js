@@ -2,15 +2,29 @@
 import { NextResponse } from 'next/server';
 import { discovery, randomState, buildAuthorizationUrl } from 'openid-client';
 
-export async function GET() {
+export async function GET(request) {
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
   const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   
-  // Force localhost for development to avoid 0.0.0.0 issues
-  const REDIRECT_URI = BASE_URL?.includes('0.0.0.0') 
-    ? `http://localhost:3000/api/auth/google/callback`
-    : `${BASE_URL}/api/auth/google/callback`;
+  // Get the actual host from the request for production compatibility
+  const requestUrl = new URL(request.url);
+  const actualHost = requestUrl.origin;
+  
+  // Determine the correct redirect URI
+  let REDIRECT_URI;
+  if (BASE_URL?.includes('0.0.0.0')) {
+    // Development: Force localhost
+    REDIRECT_URI = `http://localhost:3000/api/auth/google/callback`;
+  } else if (BASE_URL) {
+    // Use configured BASE_URL
+    REDIRECT_URI = `${BASE_URL}/api/auth/google/callback`;
+  } else {
+    // Fallback: Use actual request host (for production)
+    REDIRECT_URI = `${actualHost}/api/auth/google/callback`;
+  }
+  
+  console.log('OAuth Debug - Redirect URI:', REDIRECT_URI);
 
   const config = await discovery(
     new URL('https://accounts.google.com'),
