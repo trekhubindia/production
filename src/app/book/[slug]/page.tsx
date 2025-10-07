@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getAllTreks, Trek } from '@/lib/trek-data';
+import { getTrekBySlug, Trek } from '@/lib/trek-data';
 import BookingFormWrapper from '@/components/BookingFormWrapper';
 import AuthRequired from '@/components/AuthRequired';
 import Footer from '@/components/Footer';
@@ -9,8 +9,7 @@ export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const treks = await getAllTreks();
-  const trek = treks.find((t: Trek) => t.slug === slug);
+  const trek = await getTrekBySlug(slug);
 
   if (!trek) {
     return {
@@ -37,8 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function BookingPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const treks = await getAllTreks();
-  const trek = treks.find((t: Trek) => t.slug === slug);
+  const trek = await getTrekBySlug(slug);
 
   if (!trek) {
     notFound();

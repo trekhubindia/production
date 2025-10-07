@@ -121,34 +121,30 @@ export default function EnhancedBookingForm({
     special_requirements: '',
   });
 
-  // Fetch slots and user profile when component mounts
+  // Fetch slots and user profile when component mounts - OPTIMIZED
   useEffect(() => {
-    const fetchSlots = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/slots?trek_slug=${trekSlug}`);
-        if (response.ok) {
-          const data = await response.json();
-          setSlots(data.allSlots || data.slots || []);
+        
+        // Parallel API calls for better performance
+        const promises = [
+          fetch(`/api/slots?trek_slug=${trekSlug}`),
+          user ? fetch('/api/profile') : Promise.resolve(null)
+        ];
+        
+        const [slotsResponse, profileResponse] = await Promise.all(promises);
+        
+        // Handle slots
+        if (slotsResponse.ok) {
+          const slotsData = await slotsResponse.json();
+          setSlots(slotsData.allSlots || slotsData.slots || []);
         }
-      } catch (error) {
-        console.error('Error fetching slots:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchUserProfile = async () => {
-      if (!user) {
-        setProfileLoading(false);
-        return;
-      }
-      
-      try {
-        const response = await fetch('/api/profile');
-        if (response.ok) {
-          const data = await response.json();
-          setUserProfile(data.profile);
+        
+        // Handle profile
+        if (profileResponse && profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          setUserProfile(profileData.profile);
           
           // Update form data with profile information
           setFormData(prev => {
@@ -162,23 +158,23 @@ export default function EnhancedBookingForm({
               updatedParticipantsDetails[0] = {
                 ...primaryParticipant,
                 // Only update if field is empty to avoid overwriting user input
-                full_name: primaryParticipant.full_name || data.profile?.full_name || data.profile?.name || user.name || '',
-                date_of_birth: primaryParticipant.date_of_birth || data.profile?.date_of_birth || '',
-                gender: primaryParticipant.gender || data.profile?.gender || undefined,
-                contact_number: primaryParticipant.contact_number || data.profile?.phone || user.phone || '',
-                email_address: primaryParticipant.email_address || data.profile?.email || user.email || '',
-                residential_address: primaryParticipant.residential_address || data.profile?.location || '',
+                full_name: primaryParticipant.full_name || profileData.profile?.full_name || profileData.profile?.name || user.name || '',
+                date_of_birth: primaryParticipant.date_of_birth || profileData.profile?.date_of_birth || '',
+                gender: primaryParticipant.gender || profileData.profile?.gender || undefined,
+                contact_number: primaryParticipant.contact_number || profileData.profile?.phone || user.phone || '',
+                email_address: primaryParticipant.email_address || profileData.profile?.email || user.email || '',
+                residential_address: primaryParticipant.residential_address || profileData.profile?.location || '',
               };
             }
             
             return {
               ...prev,
               // Primary contact info (from auth_user and user_profiles)
-              customer_name: prev.customer_name || data.profile?.full_name || data.profile?.name || user.name || '',
-              customer_email: prev.customer_email || data.profile?.email || user.email || '',
-              customer_phone: prev.customer_phone || data.profile?.phone || user.phone || '',
-              customer_dob: prev.customer_dob || data.profile?.date_of_birth || '',
-              customer_gender: prev.customer_gender || data.profile?.gender || undefined,
+              customer_name: prev.customer_name || profileData.profile?.full_name || profileData.profile?.name || user.name || '',
+              customer_email: prev.customer_email || profileData.profile?.email || user.email || '',
+              customer_phone: prev.customer_phone || profileData.profile?.phone || user.phone || '',
+              customer_dob: prev.customer_dob || profileData.profile?.date_of_birth || '',
+              customer_gender: prev.customer_gender || profileData.profile?.gender || undefined,
               
               // Updated participant details (preserving existing data)
               participants_details: updatedParticipantsDetails
@@ -186,14 +182,14 @@ export default function EnhancedBookingForm({
           });
         }
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('Error fetching data:', error);
       } finally {
+        setLoading(false);
         setProfileLoading(false);
       }
     };
 
-    fetchSlots();
-    fetchUserProfile();
+    fetchData();
   }, [trekSlug, user]);
 
   // Update participants details when participants count changes

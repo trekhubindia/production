@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
-// GET /api/slots?trek_slug=...
+// Cache for slots data (in-memory cache for better performance)
+const slotsCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// GET /api/slots?trek_slug=... (OPTIMIZED WITH CACHING)
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const trekSlug = searchParams.get('trek_slug');
     
-    console.log('🔍 Debug: Fetching slots for trek_slug:', trekSlug);
-    
     if (!trekSlug) {
       return NextResponse.json({ error: 'trek_slug is required' }, { status: 400 });
+    }
+
+    // Check cache first
+    const cached = slotsCache.get(trekSlug);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return NextResponse.json(cached.data, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        },
+      });
     }
 
     // Get slots by trek_slug (now available in trek_slots table)
@@ -66,24 +78,25 @@ export async function GET(req: NextRequest) {
       slot.status === 'open' && slot.available > 0
     );
 
-    console.log('🔍 Debug: Slots with dynamic counts:', { 
-      totalSlots: slotsWithDynamicCounts.length,
-      availableSlots: availableSlots.length,
-      slotDetails: slotsWithDynamicCounts.map(s => ({
-        id: s.id,
-        date: s.date,
-        capacity: s.capacity,
-        booked: s.booked,
-        available: s.available
-      }))
-    });
-
-    return NextResponse.json({ 
+    const responseData = { 
       slots: availableSlots,
       allSlots: slotsWithDynamicCounts,
       totalSlots: slotsWithDynamicCounts.length,
       availableSlots: availableSlots.length
-    }, { status: 200 });
+    };
+
+    // Cache the response
+    slotsCache.set(trekSlug, {
+      data: responseData,
+      timestamp: Date.now()
+    });
+
+    return NextResponse.json(responseData, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      },
+    });
   } catch (error) {
     console.error('🔍 Debug: Slots API error:', error);
     return NextResponse.json({ 
