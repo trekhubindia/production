@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import Lenis from '@studio-freight/lenis';
+import Lenis from 'lenis';
 
 interface Props {
   children: React.ReactNode;
@@ -41,10 +41,6 @@ export default function LenisProvider({ children, enabled = true }: Props) {
       // Reasonable multipliers to make the effect noticeable
       wheelMultiplier: 1,
       touchMultiplier: 1,
-      // Explicit targets to avoid event attachment issues
-      wheelEventsTarget: window,
-      eventsTarget: window,
-      // wheelMultiplier: 1,
     });
     lenisRef.current = lenis;
 

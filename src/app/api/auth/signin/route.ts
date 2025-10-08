@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { Argon2id } from 'oslo/password';
+import * as argon2 from 'argon2';
 import { cookies } from 'next/headers';
 import { randomUUID } from 'crypto';
 import { logErrorToDB } from '@/lib/error-logger';
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify password
-    const validPassword = await new Argon2id().verify(key.hashed_password, password);
+    const validPassword = await argon2.verify(key.hashed_password, password);
     if (!validPassword) {
       return NextResponse.json(
         { error: 'Invalid credentials' },

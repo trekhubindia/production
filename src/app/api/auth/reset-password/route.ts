@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { Argon2id } from 'oslo/password';
+import * as argon2 from 'argon2';
 import { logErrorToDB } from '@/lib/error-logger';
 
 export async function POST(request: NextRequest) {
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash new password
-    const hashedPassword = await new Argon2id().hash(password);
+    const hashedPassword = await argon2.hash(password);
 
     // Update user's password
     const { error: updateError } = await supabaseAdmin

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { cookies } from 'next/headers';
-import { Argon2id } from 'oslo/password';
+import * as argon2 from 'argon2';
 
 async function validateUserSession() {
   try {
@@ -71,7 +71,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify password
-    const isPasswordValid = await new Argon2id().verify(userKey.hashed_password, password);
+    const isPasswordValid = await argon2.verify(userKey.hashed_password, password);
     if (!isPasswordValid) {
       return NextResponse.json({ error: 'Password is incorrect' }, { status: 400 });
     }

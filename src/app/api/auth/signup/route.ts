@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { Argon2id } from 'oslo/password';
+import * as argon2 from 'argon2';
 import { emailService } from '@/lib/email-service';
 import { randomUUID } from 'crypto';
 import { logErrorToDB } from '@/lib/error-logger';
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Hash password
-    const hashedPassword = await new Argon2id().hash(password);
+    const hashedPassword = await argon2.hash(password);
 
     // Create user with all related records
     const userId = randomUUID();
