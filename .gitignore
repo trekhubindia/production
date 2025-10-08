@@ -126,3 +126,11 @@ scripts/output/
 # Test files
 test-*.js
 *test.js
+
+# Production environment files (additional patterns)
+.env.production.*
+.env.*.UPDATED
+.env.*.COMPLETE
+.env.*.TEMPLATE
+*OAUTH_FIX.md
+*PRODUCTION*.md
